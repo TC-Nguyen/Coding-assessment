@@ -1,0 +1,1939 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>Candidate Coding Assessment</title>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<style>
+  :root{
+    --bg:#f4f5f7; --surface:#ffffff; --surface2:#eef0f3; --ink:#17202b; --muted:#5b6b7f; --line:#d7dde6;
+    --navy:#16324f; --navy-ink:#ffffff; --accent:#1b4f72; --accent-hover:#15405e;
+    --ok:#1a7a3c; --ok-bg:#e6f4ea; --bad:#b42318; --bad-bg:#fdecea; --warn-bg:#fff4d6; --warn-ink:#7a5a00;
+    --editor-bg:#10161f; --editor-ink:#e6edf3; --editor-line:#263242;
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#12161c; --surface:#1a212b; --surface2:#232d3a; --ink:#e8edf3; --muted:#9fb0c3; --line:#334155;
+      --navy:#0d1b2a; --accent:#3d7ea6; --accent-hover:#4d90ba;
+      --ok:#4ade80; --ok-bg:#123524; --bad:#f87171; --bad-bg:#3d1a17; --warn-bg:#3a2f0e; --warn-ink:#fbbf24;
+      --editor-bg:#0b0f14; --editor-ink:#e6edf3; --editor-line:#263242;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family: ui-sans-system, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:var(--ink); line-height:1.55; font-size:16px;}
+  a{color:var(--accent)}
+  .topbar{background:var(--navy); color:var(--navy-ink); padding:18px 0 16px;}
+  .wrap{max-width:1100px; margin:0 auto; padding:0 20px;}
+  .topbar .wrap{display:flex; flex-wrap:wrap; gap:8px 20px; align-items:baseline; justify-content:space-between}
+  .brand{font-size:13px; letter-spacing:.14em; text-transform:uppercase; opacity:.85; font-weight:600}
+  .topbar h1{margin:2px 0 0; font-size:26px; line-height:1.15; font-weight:700; letter-spacing:-.01em}
+  .topbar p{margin:6px 0 0; opacity:.88; max-width:640px; font-size:15px}
+  .timer-chip{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); padding:8px 14px; border-radius:999px; font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap}
+  .timer-chip.urgent{background:#7a1f1a; border-color:#a33}
+  main{padding:26px 0 48px}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:24px; }
+  .card + .card{margin-top:18px}
+  h2{font-size:20px; margin:0 0 10px; line-height:1.25}
+  h3{font-size:16px; margin:20px 0 8px}
+  p{margin:0 0 12px}
+  .muted{color:var(--muted)}
+  .small{font-size:14px}
+  .rules{background:var(--surface2); border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin:16px 0}
+  .rules ul{margin:6px 0 0 18px; padding:0}
+  .rules li{margin:4px 0}
+  label.field{display:block; margin:16px 0 0}
+  label.field span{display:block; font-weight:600; font-size:14px; margin-bottom:6px}
+  label.field span em{font-weight:400; color:var(--muted); font-style:normal}
+  input[type="text"], input[type="email"]{width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-size:16px}
+  input:focus, textarea:focus, button:focus-visible, a.btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .lang-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin-top:8px}
+  .tier-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-top:8px}
+  .lang-opt{position:relative; display:block; cursor:pointer}
+  .lang-opt input{position:absolute; top:12px; right:12px; width:20px; height:20px; opacity:1; cursor:pointer; accent-color:var(--accent); z-index:2; margin:0}
+  .lang-opt .box{border:1px solid var(--line); border-radius:8px; padding:14px 36px 14px 14px; height:100%; background:var(--surface)}
+  .lang-opt input:checked + .box{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; background:var(--surface2)}
+  .lang-opt .name{font-weight:700; font-size:17px}
+  .lang-opt .note{font-size:13px; color:var(--muted); margin-top:4px; line-height:1.4}
+  .lang-opt .tag{display:inline-block; margin-top:8px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 7px; border-radius:999px; background:var(--surface2); border:1px solid var(--line); color:var(--muted)}
+  .lang-opt .tag.auto{background:var(--ok-bg); color:var(--ok); border-color:transparent}
+  .btn{appearance:none; border:1px solid var(--accent); background:var(--accent); color:#fff; padding:11px 18px; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:8px; text-decoration:none}
+  .btn:hover{background:var(--accent-hover)}
+  .btn:disabled{opacity:.55; cursor:not-allowed}
+  .btn.secondary{background:transparent; color:var(--accent)}
+  .btn.secondary:hover{background:var(--surface2)}
+  .btn.ghost{background:transparent; border-color:var(--line); color:var(--ink)}
+  .btn.ghost:hover{background:var(--surface2)}
+  .actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px}
+  .error-text{color:var(--bad); font-size:14px; margin-top:8px; min-height:1.2em}
+  .assess-head{display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; margin-bottom:16px}
+  .meta-line{font-size:14px; color:var(--muted)}
+  .meta-line strong{color:var(--ink)}
+  .grid{display:grid; grid-template-columns:1fr; gap:18px}
+  @media(min-width:900px){ .grid{grid-template-columns:1fr 1.05fr; align-items:start} .editor-card{position:sticky; top:16px} }
+  .prompt-body{font-size:15px}
+  .prompt-body pre, pre.codeblock{background:var(--surface2); border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; font-size:13.5px; line-height:1.5; white-space:pre-wrap; word-break:break-word}
+  .prompt-body code{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.92em; background:var(--surface2); padding:1px 5px; border-radius:4px}
+  .prompt-body pre code{background:none; padding:0}
+  .prompt-body ul{margin:6px 0 12px 18px; padding:0}
+  .prompt-body li{margin:4px 0}
+  .prompt-body table{border-collapse:collapse; width:100%; margin:10px 0; font-size:14px}
+  .prompt-body th,.prompt-body td{border:1px solid var(--line); padding:6px 9px; text-align:left}
+  .editor-wrap{background:var(--editor-bg); border:1px solid var(--editor-line); border-radius:10px; overflow:hidden}
+  .editor-head{display:flex; justify-content:space-between; align-items:center; padding:9px 14px; background:rgba(255,255,255,.04); color:#cbd5e1; font-size:13px; border-bottom:1px solid var(--editor-line)}
+  .editor-head .dot{width:9px;height:9px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:7px; vertical-align:middle}
+  textarea#codeEditor{width:100%; min-height:430px; border:0; background:var(--editor-bg); color:var(--editor-ink); font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:14px; line-height:1.6; padding:16px; resize:vertical; tab-size:2; outline:none; display:block}
+  textarea#codeEditor[readonly]{opacity:.75}
+  .status-line{margin-top:12px; font-size:14px; min-height:1.4em}
+  #problemTitle, #problemBody{-webkit-user-select:none; user-select:none}
+  .paste-notice{margin-top:10px; font-size:13.5px; font-weight:600; padding:9px 12px; border-radius:8px; border:1px solid var(--line); background:var(--warn-bg); color:var(--warn-ink)}
+  .departure-indicator{flex-basis:100%; font-size:13.5px; font-weight:600; padding:8px 12px; border-radius:8px; border:1px solid var(--line); background:var(--warn-bg); color:var(--warn-ink)}
+  .result-box{border-radius:8px; padding:14px 16px; margin-top:14px; border:1px solid var(--line); background:var(--surface2); display:none}
+  .result-box.show{display:block}
+  .result-box.pass{border-color:var(--ok); background:var(--ok-bg)}
+  .result-box.fail{border-color:var(--bad); background:var(--bad-bg)}
+  .result-box h4{margin:0 0 6px; font-size:15px}
+  .result-box pre{white-space:pre-wrap; word-break:break-word; font-size:13px; margin:8px 0 0; background:rgba(0,0,0,.06); padding:10px; border-radius:6px; max-height:220px; overflow:auto}
+  @media (prefers-color-scheme: dark){ .result-box pre{background:rgba(255,255,255,.06)} }
+  .summary-table{width:100%; border-collapse:collapse; margin:14px 0}
+  .summary-table th,.summary-table td{border-bottom:1px solid var(--line); padding:9px 10px; text-align:left; vertical-align:top; font-size:15px}
+  .summary-table th{width:190px; color:var(--muted); font-weight:600}
+  .badge{display:inline-block; padding:2px 9px; border-radius:999px; font-size:13px; font-weight:700}
+  .badge.pass{background:var(--ok-bg); color:var(--ok)}
+  .badge.fail{background:var(--bad-bg); color:var(--bad)}
+  .badge.neutral{background:var(--surface2); color:var(--muted); border:1px solid var(--line)}
+  .badge.warn{background:var(--warn-bg); color:var(--warn-ink)}
+  .submitted-code{background:var(--editor-bg); color:var(--editor-ink); border-radius:10px; padding:16px; font-family:ui-monospace, Menlo, Consolas, monospace; font-size:13.5px; line-height:1.6; white-space:pre-wrap; word-break:break-word; overflow-x:auto; max-height:520px; overflow-y:auto}
+  .delivery-status{border-radius:8px; padding:12px 16px; margin:14px 0 4px; border:1px solid var(--line); background:var(--surface2); font-size:15px; font-weight:600}
+  .delivery-status.sent{border-color:var(--ok); background:var(--ok-bg); color:var(--ok)}
+  .delivery-status.failed{border-color:var(--bad); background:var(--bad-bg); color:var(--bad)}
+  .delivery-status.pending{color:var(--muted)}
+  .hidden{display:none !important}
+  .footer-note{margin-top:22px; font-size:13px; color:var(--muted); text-align:center}
+  @media(max-width:560px){
+    .topbar h1{font-size:22px}
+    .card{padding:18px}
+    textarea#codeEditor{min-height:340px; font-size:13.5px}
+    .summary-table th{width:130px}
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <div>
+      <div class="brand">H10 Capital</div>
+      <h1>Coding Assessment</h1>
+      <p>A timed coding assessment in the language you choose — a 15-minute screen or a 40-minute deep problem.</p>
+    </div>
+    <div id="headerTimer" class="timer-chip hidden" aria-live="polite">15:00 remaining</div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <!-- ============ START VIEW ============ -->
+    <section id="view-start">
+      <div class="card">
+        <h2>Before you start</h2>
+        <p>This is a timed coding assessment sent to you by your H10 Capital recruiter. You will get <strong>one problem</strong> in your chosen language — either the <strong>15-minute Screen</strong> or the <strong>40-minute Deep</strong> problem. Choose the tier your recruiter specified. When you finish, this page creates a results summary for your recruiter at <strong>tuan@h10capital.com</strong>. When you finish, your results are sent to your recruiter automatically.</p>
+        <div class="rules">
+          <strong>Rules — please read</strong>
+          <ul>
+            <li>Complete it on your own — <strong>no AI assistants, no code lookup, no help from another person.</strong></li>
+            <li>Solutions must be typed in the editor — pasting is disabled.</li>
+            <li>Leaving this page during the test is recorded and reported with your results.</li>
+            <li>Think in code, not perfection: a complete, simple solution beats an unfinished clever one.</li>
+            <li>Your code and results are <strong>not stored on this site</strong>. When you finish, your results are sent to your recruiter at <strong>tuan@h10capital.com</strong> automatically; you can also copy or email the summary yourself as a backup.</li>
+            <li>How scoring works: for <strong>Python</strong> and <strong>JavaScript</strong>, the checks run entirely in your browser. For <strong>C++, C#, and Java</strong>, your code is sent to a public code-execution service (Piston, with Judge0 as a fallback) to compile and run the checks; <strong>only your code is sent — your name and email are never sent to that service.</strong></li>
+            <li>The timer starts when you press <strong>Start assessment</strong> and cannot be paused. If time runs out, the editor locks and your results are generated as they stand.</li>
+          </ul>
+        </div>
+
+        <form id="startForm" novalidate>
+          <label class="field">
+            <span>Your full name <em>(required)</em></span>
+            <input type="text" id="candName" autocomplete="name" placeholder="e.g. Jordan Lee" />
+          </label>
+          <label class="field">
+            <span>Your email <em>(optional)</em></span>
+            <input type="email" id="candEmail" autocomplete="email" placeholder="you@example.com" />
+          </label>
+
+          <label class="field" style="margin-top:22px">
+            <span>Choose your test tier <em>(pick the one your recruiter specified)</em></span>
+          </label>
+          <div class="tier-grid" role="radiogroup" aria-label="Test tier">
+            <label class="lang-opt">
+              <input type="radio" name="tier" value="screen" checked />
+              <div class="box">
+                <div class="name">Screen — 15 minutes</div>
+                <div class="note">One focused problem that checks core fluency in your language.</div>
+                <span class="tag">15:00</span>
+              </div>
+            </label>
+            <label class="lang-opt">
+              <input type="radio" name="tier" value="deep" />
+              <div class="box">
+                <div class="name">Deep — 40 minutes</div>
+                <div class="note">A larger problem that checks design, edge cases, and debugging depth.</div>
+                <span class="tag">40:00</span>
+              </div>
+            </label>
+          </div>
+
+          <label class="field" style="margin-top:22px">
+            <span>Choose your language</span>
+          </label>
+          <div class="lang-grid" role="radiogroup" aria-label="Language">
+            <label class="lang-opt">
+              <input type="radio" name="lang" value="python" checked />
+              <div class="box">
+                <div class="name">Python</div>
+                <div class="note">Runs and scores in your browser against the example and additional checks.</div>
+                <span class="tag auto">Auto-scored</span>
+              </div>
+            </label>
+            <label class="lang-opt">
+              <input type="radio" name="lang" value="javascript" />
+              <div class="box">
+                <div class="name">JavaScript</div>
+                <div class="note">Runs and scores in your browser against the example and additional checks.</div>
+                <span class="tag auto">Auto-scored</span>
+              </div>
+            </label>
+            <label class="lang-opt">
+              <input type="radio" name="lang" value="cpp" />
+              <div class="box">
+                <div class="name">C++</div>
+                <div class="note">Your code is compiled and run by a public code-execution service (code only — never your name or email).</div>
+                <span class="tag auto">Auto-scored</span>
+              </div>
+            </label>
+            <label class="lang-opt">
+              <input type="radio" name="lang" value="csharp" />
+              <div class="box">
+                <div class="name">C#</div>
+                <div class="note">Your code is compiled and run by a public code-execution service (code only — never your name or email).</div>
+                <span class="tag auto">Auto-scored</span>
+              </div>
+            </label>
+            <label class="lang-opt">
+              <input type="radio" name="lang" value="java" />
+              <div class="box">
+                <div class="name">Java</div>
+                <div class="note">Your code is compiled and run by a public code-execution service (code only — never your name or email).</div>
+                <span class="tag auto">Auto-scored</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="error-text" id="startError" role="alert"></div>
+          <div class="actions">
+            <button type="submit" class="btn" id="startBtn">Start assessment — 15:00</button>
+          </div>
+          <p class="small muted" style="margin-top:12px">By starting, you confirm you will complete this on your own, without AI assistance or code lookup. Pasting is disabled and page departures are recorded.</p>
+        </form>
+      </div>
+      <p class="footer-note">Questions about the role or the process? Contact the recruiter who sent you this link.</p>
+    </section>
+
+    <!-- ============ ASSESSMENT VIEW ============ -->
+    <section id="view-assessment" class="hidden">
+      <div class="assess-head">
+        <div class="meta-line" id="assessMeta"></div>
+        <div class="meta-line">Time remaining: <strong id="bigTimer" style="font-size:20px; font-variant-numeric:tabular-nums">15:00</strong></div>
+        <div id="departureIndicator" class="departure-indicator hidden" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2 id="problemTitle"></h2>
+          <div class="prompt-body" id="problemBody"></div>
+        </div>
+
+        <div class="card editor-card">
+          <h2 style="margin-bottom:4px">Your solution</h2>
+          <p class="small muted" id="editorHint" style="margin-bottom:12px"></p>
+          <div class="editor-wrap">
+            <div class="editor-head"><span><span class="dot"></span><span id="editorFileName">solution</span></span><span id="runtimeState"></span></div>
+            <textarea id="codeEditor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Code editor"></textarea>
+          </div>
+          <div id="pasteNotice" class="paste-notice hidden" role="status" aria-live="polite">Pasting is disabled — solutions must be typed.</div>
+          <div class="status-line" id="runStatus" aria-live="polite"></div>
+          <div class="result-box" id="checkBox">
+            <h4 id="checkTitle"></h4>
+            <div id="checkDetail" class="small"></div>
+            <pre id="checkPre" class="hidden"></pre>
+          </div>
+          <div class="actions">
+            <button class="btn secondary" id="runBtn" type="button">Run checks</button>
+            <button class="btn" id="finishBtn" type="button">Finish &amp; get results</button>
+          </div>
+          <p class="small muted" style="margin-top:10px" id="finishHint"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RESULTS VIEW ============ -->
+    <section id="view-results" class="hidden">
+      <div class="card">
+        <h2>Your results — send these to your recruiter</h2>
+        <p>Your results are not saved on this site. Use <strong>Email results</strong> — it opens an email already addressed to your recruiter at <strong>tuan@h10capital.com</strong>; just press Send. Or use <strong>Copy results</strong> and paste them into an email to <strong>tuan@h10capital.com</strong> yourself.</p>
+        <div class="delivery-status pending" id="deliveryStatus" role="status" aria-live="polite"></div>
+        <table class="summary-table"><tbody id="summaryBody"></tbody></table>
+        <h3>Submitted code</h3>
+        <div class="submitted-code" id="submittedCode"></div>
+        <div class="actions">
+          <button class="btn" id="copyBtn" type="button">Copy results</button>
+          <a class="btn secondary" id="emailBtn" href="#">Email results</a>
+        </div>
+        <div class="status-line" id="copyStatus" aria-live="polite"></div>
+        <p class="small muted">The email is addressed to your recruiter at tuan@h10capital.com with the subject line filled in — just press Send. If the email button doesn't open your mail app, copy the results instead and email them manually to tuan@h10capital.com.</p>
+      </div>
+      <p class="footer-note">H10 Capital — Coding Assessment. Thank you for completing it.</p>
+    </section>
+
+  </div>
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     AUTO-SEND CONFIG — Web3Forms access key.
+     Paste the real Web3Forms access key for tuan@h10capital.com
+     in place of the placeholder below to turn on automatic result
+     delivery. While the placeholder is in place, no automatic
+     send is attempted and candidates are told to use the
+     Copy / Email buttons instead.
+     ============================================================ */
+  const WEB3FORMS_ACCESS_KEY = "85abafbb-ea5c-4d2f-abad-c8ab4eb7b6e8";
+  var WEB3FORMS_ENDPOINT = "https://api.web3forms.com/submit";
+  var RECRUITER_EMAIL = "tuan@h10capital.com";
+
+  var TIERS = {
+    screen: { key: "screen", label: "Screen", seconds: 15 * 60, lengthLabel: "15 minutes" },
+    deep:   { key: "deep",   label: "Deep",   seconds: 40 * 60, lengthLabel: "40 minutes" }
+  };
+
+  /* ================= Python screen (v1, verbatim) ================= */
+  var PY_WORKED_INPUT = [
+    "2026-11-06T09:15:02Z, bus_voltage, 28.4, 27.0, 29.5",
+    "2026-11-06T09:15:03Z, bus_voltage, 29.9, 27.0, 29.5",
+    "2026-11-06T09:15:04Z, batt_temp, 22.0, 0.0, 40.0",
+    "garbage line",
+    "2026-11-06T09:15:05Z, batt_temp, not_a_number, 0.0, 40.0"
+  ];
+  var PY_WORKED_EXPECTED = {"results": {"bus_voltage": "FAIL", "batt_temp": "PASS"}, "summary": {"pass": 1, "fail": 1, "skipped": 2}};
+  var PY_TESTS = [
+    { args: [PY_WORKED_INPUT], expected: PY_WORKED_EXPECTED },
+    { args: [["2026-11-06T09:00:00Z, sensor_a, 10.0, 10.0, 20.0", "2026-11-06T09:00:01Z, sensor_a, 20.0, 10.0, 20.0"]],
+      expected: {"results": {"sensor_a": "PASS"}, "summary": {"pass": 1, "fail": 0, "skipped": 0}} },
+    { args: [[]],
+      expected: {"results": {}, "summary": {"pass": 0, "fail": 0, "skipped": 0}} },
+    { args: [["2026-11-06T09:00:00Z, motor_current, 99.0, 0.0, 10.0", "2026-11-06T09:00:01Z, motor_current, 5.0, 0.0, 10.0", "2026-11-06T09:00:02Z, bad_sensor, 5.0, 10.0, 0.0", "2026-11-06T09:00:03Z, , 5.0, 0.0, 10.0"]],
+      expected: {"results": {"motor_current": "FAIL"}, "summary": {"pass": 0, "fail": 1, "skipped": 2}} }
+  ];
+
+  /* ================= Python deep — Flaky test analyzer ================= */
+  function pyRec(tid, rid, res, dur){ return {"test_id": tid, "run_id": rid, "result": res, "duration_s": dur}; }
+  var PY_DEEP_RECORDS = [
+    pyRec("valve_cycle", 1, "pass", 10.0), pyRec("valve_cycle", 2, "fail", 20.0), pyRec("valve_cycle", 3, "pass", 30.0), pyRec("valve_cycle", 4, "fail", 40.0),
+    pyRec("rf_link", 1, "pass", 5.0), pyRec("rf_link", 2, "pass", 5.0), pyRec("rf_link", 3, "pass", 5.0), pyRec("rf_link", 4, "fail", 5.0),
+    pyRec("thermal_soak", 1, "pass", 600.0), pyRec("thermal_soak", 2, "pass", 610.0),
+    pyRec("deploy_seq", 1, "fail", 3.0), pyRec("deploy_seq", 2, "fail", 3.5),
+    pyRec("gyro_cal", 1, "fail", 100.0), pyRec("gyro_cal", 2, "pass", 300.0)
+  ];
+  var PY_DEEP_H3 = [
+    pyRec("alpha", 1, "pass", 10.0), pyRec("alpha", 2, "fail", 30.0),
+    pyRec("beta", 1, "fail", 5.0), pyRec("beta", 2, "fail", 6.0),
+    pyRec("gamma", 1, "pass", 5.0), pyRec("gamma", 2, "pass", 7.0),
+    pyRec("delta", 1, "pass", 10.0), pyRec("delta", 2, "fail", 20.0), pyRec("delta", 3, "fail", 30.0)
+  ];
+  var PY_DEEP_TESTS = [
+    { args: [PY_DEEP_RECORDS, 2], expected: [{"test_id": "gyro_cal", "runs": 2, "pass_rate": 0.5, "avg_duration_s": 200.0}, {"test_id": "valve_cycle", "runs": 4, "pass_rate": 0.5, "avg_duration_s": 25.0}] },
+    { args: [PY_DEEP_RECORDS, 10], expected: [{"test_id": "gyro_cal", "runs": 2, "pass_rate": 0.5, "avg_duration_s": 200.0}, {"test_id": "valve_cycle", "runs": 4, "pass_rate": 0.5, "avg_duration_s": 25.0}, {"test_id": "rf_link", "runs": 4, "pass_rate": 0.75, "avg_duration_s": 5.0}] },
+    { args: [[], 3], expected: [] },
+    { args: [PY_DEEP_H3, 5], expected: [{"test_id": "delta", "runs": 3, "pass_rate": 0.3333333333333333, "avg_duration_s": 20.0}, {"test_id": "alpha", "runs": 2, "pass_rate": 0.5, "avg_duration_s": 20.0}] }
+  ];
+
+  /* ================= JavaScript screen (v1, verbatim) ================= */
+  var JS_WORKED_INPUT = [
+    "[2026-11-06T09:00:01Z] [INFO] test session started",
+    "[2026-11-06T09:00:02Z] [WARN] rail voltage drifting",
+    "[2026-11-06T09:00:03Z] [ERROR] bus voltage out of range",
+    "[2026-11-06T09:00:04Z] [INFO] retrying measurement",
+    "not a log line",
+    "[2026-11-06T09:00:05Z] [ERROR] thermal limit exceeded",
+    "[2026-11-06T09:00:06Z] [DEBUG] heartbeat"
+  ];
+  var JS_WORKED_EXPECTED = {counts: {INFO: 2, WARN: 1, ERROR: 2}, errorMessages: ["bus voltage out of range", "thermal limit exceeded"], ignored: 2};
+  var JS_TESTS = [
+    { args: [JS_WORKED_INPUT], expected: JS_WORKED_EXPECTED },
+    { args: [[]],
+      expected: {counts: {INFO: 0, WARN: 0, ERROR: 0}, errorMessages: [], ignored: 0} },
+    { args: [["[ts] [ERROR]", "[ts] [ERROR] ", "[ts][ERROR] hello", "[] [INFO] hello"]],
+      expected: {counts: {INFO: 0, WARN: 0, ERROR: 0}, errorMessages: [], ignored: 4} },
+    { args: [["[2026-11-06T09:00:01Z] [ERROR] sensor [3] offline", "[2026-11-06T09:00:02Z] [INFO] ok", "[2026-11-06T09:00:03Z] [WARN] careful", "[2026-11-06T09:00:04Z] [ERROR] second [ERROR] inside"]],
+      expected: {counts: {INFO: 1, WARN: 1, ERROR: 2}, errorMessages: ["sensor [3] offline", "second [ERROR] inside"], ignored: 0} }
+  ];
+
+  /* ================= Compiled-language drivers =================
+     Each driver prints "CHECK <id> PASS|FAIL" lines and one "WORKED_OUT ..." line.
+     Verified end-to-end against the pack model solutions (see build notes). */
+  var CS_DRIVER_BODY =
+"namespace H10Driver\n" +
+"{\n" +
+"    using System;\n" +
+"    using System.Collections.Generic;\n" +
+"\n" +
+"    internal static class Check\n" +
+"    {\n" +
+"        public static void Report(string id, bool ok)\n" +
+"        {\n" +
+"            Console.WriteLine(\"CHECK \" + id + (ok ? \" PASS\" : \" FAIL\"));\n" +
+"        }\n" +
+"    }\n" +
+"}\n";
+
+  var CS_SCREEN_DRIVER_TAIL =
+"namespace H10Driver\n" +
+"{\n" +
+"    using System;\n" +
+"    using System.Collections.Generic;\n" +
+"\n" +
+"    internal static class Program\n" +
+"    {\n" +
+"        private static bool Eq(List<string> a, params string[] b)\n" +
+"        {\n" +
+"            if (a == null || a.Count != b.Length) return false;\n" +
+"            for (int i = 0; i < b.Length; i++) if (a[i] != b[i]) return false;\n" +
+"            return true;\n" +
+"        }\n" +
+"\n" +
+"        private static void Main()\n" +
+"        {\n" +
+"            var s = TestResultSummarizer.Summarize(new[]\n" +
+"            {\n" +
+"                \"BusVoltage:PASS\", \"BattTemp:FAIL\", \"RFLink:PASS\", \"badentry\", \"GyroCal:FAIL\", \"DeploySeq:MAYBE\"\n" +
+"            });\n" +
+"            Console.WriteLine(\"WORKED_OUT Passed=\" + s.Passed + \" Failed=\" + s.Failed + \" Invalid=\" + s.Invalid\n" +
+"                + \" FailedTests=[\" + string.Join(\", \", s.FailedTests) + \"]\");\n" +
+"            Check.Report(\"worked\", s.Passed == 2 && s.Failed == 2 && s.Invalid == 2 && Eq(s.FailedTests, \"BattTemp\", \"GyroCal\"));\n" +
+"\n" +
+"            var h1 = TestResultSummarizer.Summarize(new string[0]);\n" +
+"            Check.Report(\"hidden1\", h1.Passed == 0 && h1.Failed == 0 && h1.Invalid == 0 && h1.FailedTests != null && h1.FailedTests.Count == 0);\n" +
+"\n" +
+"            var h2 = TestResultSummarizer.Summarize(new[] { \"  BusVoltage : PASS \", \":PASS\", \"NoColon\", \"X:pass\", \"Y:FAIL \" });\n" +
+"            Check.Report(\"hidden2\", h2.Passed == 1 && h2.Failed == 1 && h2.Invalid == 3 && Eq(h2.FailedTests, \"Y\"));\n" +
+"\n" +
+"            var h3 = TestResultSummarizer.Summarize(new[] { \"A:FAIL\", \"A:FAIL\", \"B:PASS\" });\n" +
+"            Check.Report(\"hidden3\", h3.Passed == 1 && h3.Failed == 2 && h3.Invalid == 0 && Eq(h3.FailedTests, \"A\", \"A\"));\n" +
+"        }\n" +
+"    }\n" +
+"}\n";
+
+  var CS_DEEP_DRIVER_TAIL =
+"namespace H10Driver\n" +
+"{\n" +
+"    using System;\n" +
+"    using System.Collections.Generic;\n" +
+"\n" +
+"    internal static class Program\n" +
+"    {\n" +
+"        private static void Main()\n" +
+"        {\n" +
+"            var now = new DateTimeOffset(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);\n" +
+"            var log = new List<string>();\n" +
+"            var q = new RateLimitedCommandQueue(3, TimeSpan.FromSeconds(10), () => now);\n" +
+"            for (int i = 1; i <= 5; i++) { int n = i; q.Submit(() => log.Add(\"cmd\" + n)); }\n" +
+"            int r1 = q.RunPending();\n" +
+"            int p1 = q.PendingCount;\n" +
+"            int r2 = q.RunPending();\n" +
+"            now = now.AddSeconds(10);\n" +
+"            int r3 = q.RunPending();\n" +
+"            int p2 = q.PendingCount;\n" +
+"            Console.WriteLine(\"WORKED_OUT first=\" + r1 + \" pending=\" + p1 + \" second=\" + r2 + \" after10s=\" + r3\n" +
+"                + \" pendingEnd=\" + p2 + \" executed=[\" + string.Join(\",\", log) + \"]\");\n" +
+"            Check.Report(\"worked\", r1 == 3 && p1 == 2 && r2 == 0 && r3 == 2 && p2 == 0\n" +
+"                && string.Join(\",\", log) == \"cmd1,cmd2,cmd3,cmd4,cmd5\");\n" +
+"\n" +
+"            {\n" +
+"                var t = new DateTimeOffset(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);\n" +
+"                var log1 = new List<string>();\n" +
+"                var q1 = new RateLimitedCommandQueue(2, TimeSpan.FromSeconds(10), () => t);\n" +
+"                q1.Submit(() => log1.Add(\"a\"));\n" +
+"                int a1 = q1.RunPending();\n" +
+"                t = t.AddSeconds(8);\n" +
+"                q1.Submit(() => log1.Add(\"b\")); q1.Submit(() => log1.Add(\"c\")); q1.Submit(() => log1.Add(\"d\"));\n" +
+"                int a2 = q1.RunPending();\n" +
+"                t = t.AddSeconds(3);\n" +
+"                int a3 = q1.RunPending();\n" +
+"                t = t.AddSeconds(7);\n" +
+"                int a4 = q1.RunPending();\n" +
+"                Check.Report(\"hidden1\", a1 == 1 && a2 == 1 && a3 == 1 && a4 == 1 && q1.PendingCount == 0\n" +
+"                    && string.Join(\",\", log1) == \"a,b,c,d\");\n" +
+"            }\n" +
+"\n" +
+"            {\n" +
+"                var t = new DateTimeOffset(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);\n" +
+"                var log2 = new List<string>();\n" +
+"                var q2 = new RateLimitedCommandQueue(10, TimeSpan.FromSeconds(60), () => t);\n" +
+"                q2.Submit(() => log2.Add(\"x\")); q2.Submit(() => log2.Add(\"y\")); q2.Submit(() => log2.Add(\"z\"));\n" +
+"                bool ok = log2.Count == 0 && q2.PendingCount == 3;\n" +
+"                int ran = q2.RunPending();\n" +
+"                Check.Report(\"hidden2\", ok && ran == 3 && string.Join(\",\", log2) == \"x,y,z\" && q2.PendingCount == 0);\n" +
+"            }\n" +
+"\n" +
+"            {\n" +
+"                var t = new DateTimeOffset(2026, 11, 6, 9, 0, 0, TimeSpan.Zero);\n" +
+"                var log3 = new List<string>();\n" +
+"                var q3 = new RateLimitedCommandQueue(1, TimeSpan.FromSeconds(5), () => t);\n" +
+"                bool ok = q3.RunPending() == 0 && q3.PendingCount == 0;\n" +
+"                q3.Submit(() => log3.Add(\"a\")); q3.Submit(() => log3.Add(\"b\"));\n" +
+"                int b1 = q3.RunPending();\n" +
+"                t = t.AddSeconds(5);\n" +
+"                int b2 = q3.RunPending();\n" +
+"                Check.Report(\"hidden3\", ok && b1 == 1 && b2 == 1 && q3.PendingCount == 0\n" +
+"                    && string.Join(\",\", log3) == \"a,b\");\n" +
+"            }\n" +
+"        }\n" +
+"    }\n" +
+"}\n";
+
+  var CPP_SCREEN_DRIVER =
+"\n#include <iostream>\n" +
+"namespace h10driver {\n" +
+"void report(const char* id, bool ok) { std::cout << \"CHECK \" << id << (ok ? \" PASS\" : \" FAIL\") << \"\\n\"; }\n" +
+"}\n" +
+"int main() {\n" +
+"    using namespace h10driver;\n" +
+"    {\n" +
+"        IntRingBuffer b(3);\n" +
+"        b.push(1); b.push(2); b.push(3);\n" +
+"        bool ok = b.full() && b.size() == 3 && !b.empty() && b.capacity() == 3;\n" +
+"        b.push(4);\n" +
+"        int v = 0; int seq[3] = {0,0,0};\n" +
+"        for (int i = 0; i < 3; i++) { if (!b.pop(v)) ok = false; else seq[i] = v; }\n" +
+"        ok = ok && seq[0] == 2 && seq[1] == 3 && seq[2] == 4;\n" +
+"        ok = ok && !b.pop(v) && b.empty() && b.size() == 0;\n" +
+"        std::cout << \"WORKED_OUT pops_after_overwrite=\" << seq[0] << \",\" << seq[1] << \",\" << seq[2] << \"\\n\";\n" +
+"        report(\"worked\", ok);\n" +
+"    }\n" +
+"    {\n" +
+"        IntRingBuffer b(1);\n" +
+"        b.push(10); b.push(20);\n" +
+"        int v = 0;\n" +
+"        bool ok = b.size() == 1 && b.full() && b.pop(v) && v == 20 && b.empty();\n" +
+"        report(\"hidden1\", ok);\n" +
+"    }\n" +
+"    {\n" +
+"        IntRingBuffer b(2);\n" +
+"        bool ok = true;\n" +
+"        for (int i = 0; i < 5; i++) { b.push(i); int v = -1; if (!b.pop(v) || v != i) ok = false; }\n" +
+"        ok = ok && b.empty();\n" +
+"        report(\"hidden2\", ok);\n" +
+"    }\n" +
+"    {\n" +
+"        IntRingBuffer b(4);\n" +
+"        bool ok = b.empty() && b.size() == 0 && !b.full();\n" +
+"        for (int i = 1; i <= 6; i++) b.push(i);\n" +
+"        int expect[4] = {3, 4, 5, 6};\n" +
+"        ok = ok && b.size() == 4 && b.full();\n" +
+"        for (int i = 0; i < 4; i++) { int v = 0; if (!b.pop(v) || v != expect[i]) ok = false; }\n" +
+"        report(\"hidden3\", ok);\n" +
+"    }\n" +
+"    return 0;\n" +
+"}\n";
+
+  var CPP_DEEP_DRIVER =
+"\n#include <iostream>\n" +
+"#include <string>\n" +
+"namespace h10driver {\n" +
+"void report(const char* id, bool ok) { std::cout << \"CHECK \" << id << (ok ? \" PASS\" : \" FAIL\") << \"\\n\"; }\n" +
+"std::string errName(ParseError e) {\n" +
+"    switch (e) {\n" +
+"        case ParseError::None: return \"None\";\n" +
+"        case ParseError::TooShort: return \"TooShort\";\n" +
+"        case ParseError::BadHeader: return \"BadHeader\";\n" +
+"        case ParseError::BadLength: return \"BadLength\";\n" +
+"        case ParseError::BadChecksum: return \"BadChecksum\";\n" +
+"    }\n" +
+"    return \"?\";\n" +
+"}\n" +
+"std::string payloadStr(const std::vector<std::uint8_t>& p) {\n" +
+"    std::string s = \"[\";\n" +
+"    for (std::size_t i = 0; i < p.size(); i++) { if (i) s += \" \"; s += std::to_string((int)p[i]); }\n" +
+"    return s + \"]\";\n" +
+"}\n" +
+"bool isOk(std::vector<std::uint8_t> pkt, ParseError e, std::vector<std::uint8_t> payload) {\n" +
+"    ParseResult r = parsePacket(pkt);\n" +
+"    return r.error == e && (e != ParseError::None || r.payload == payload);\n" +
+"}\n" +
+"}\n" +
+"int main() {\n" +
+"    using namespace h10driver;\n" +
+"    {\n" +
+"        ParseResult r1 = parsePacket({0xA5, 0x02, 0x01, 0x02, 0xA4});\n" +
+"        ParseResult r2 = parsePacket({0xA5, 0x02, 0x01, 0x02, 0x00});\n" +
+"        ParseResult r3 = parsePacket({0x5A, 0x02, 0x01, 0x02, 0xA4});\n" +
+"        ParseResult r4 = parsePacket({0xA5, 0x02});\n" +
+"        ParseResult r5 = parsePacket({0xA5, 0x03, 0x01, 0x02, 0xA4});\n" +
+"        ParseResult r6 = parsePacket({0xA5, 0x00, 0xA5});\n" +
+"        bool ok = r1.error == ParseError::None && r1.payload == std::vector<std::uint8_t>({1, 2})\n" +
+"            && r2.error == ParseError::BadChecksum && r3.error == ParseError::BadHeader\n" +
+"            && r4.error == ParseError::TooShort && r5.error == ParseError::BadLength\n" +
+"            && r6.error == ParseError::None && r6.payload.empty();\n" +
+"        std::cout << \"WORKED_OUT \" << errName(r1.error) << \" \" << payloadStr(r1.payload) << \" | \"\n" +
+"                  << errName(r2.error) << \" | \" << errName(r3.error) << \" | \" << errName(r4.error)\n" +
+"                  << \" | \" << errName(r5.error) << \" | \" << errName(r6.error) << \" \" << payloadStr(r6.payload) << \"\\n\";\n" +
+"        report(\"worked\", ok);\n" +
+"    }\n" +
+"    report(\"hidden1\", isOk({0x5A, 0x02}, ParseError::TooShort, {}));\n" +
+"    report(\"hidden2\", isOk({0xA5, 0x02, 0x80, 0xFF, 0xD8}, ParseError::None, {0x80, 0xFF}));\n" +
+"    report(\"hidden3\", isOk({0xA5, 0x01, 0x07, 0xA3, 0x00}, ParseError::BadLength, {})\n" +
+"                      && isOk({0xA5, 0x00, 0x00}, ParseError::BadChecksum, {}));\n" +
+"    return 0;\n" +
+"}\n";
+
+  var JAVA_SCREEN_MAIN =
+"import java.util.List;\n" +
+"\n" +
+"public class Main {\n" +
+"    static void report(String id, boolean ok) {\n" +
+"        System.out.println(\"CHECK \" + id + (ok ? \" PASS\" : \" FAIL\"));\n" +
+"    }\n" +
+"\n" +
+"    public static void main(String[] args) {\n" +
+"        var s = TestSessionSummarizer.summarize(new String[]{\n" +
+"            \"BusVoltage, PASS, 1200\", \"BattTemp, FAIL, 3400\", \"RFLink, PASS, 800\",\n" +
+"            \"bad line\", \"GyroCal, FAIL, 2600\", \"DeploySeq, MAYBE, 100\",\n" +
+"            \"ThermalSoak, PASS, not_a_number\"\n" +
+"        });\n" +
+"        System.out.println(\"WORKED_OUT total=\" + s.total() + \" passed=\" + s.passed() + \" failed=\" + s.failed()\n" +
+"            + \" failedTests=\" + s.failedTests() + \" failedDurationMs=\" + s.failedDurationMs() + \" malformed=\" + s.malformed());\n" +
+"        report(\"worked\", s.total() == 4 && s.passed() == 2 && s.failed() == 2\n" +
+"            && s.failedTests().equals(List.of(\"BattTemp\", \"GyroCal\")) && s.failedDurationMs() == 6000 && s.malformed() == 3);\n" +
+"\n" +
+"        var h1 = TestSessionSummarizer.summarize(new String[0]);\n" +
+"        report(\"hidden1\", h1.total() == 0 && h1.passed() == 0 && h1.failed() == 0\n" +
+"            && h1.failedTests().isEmpty() && h1.failedDurationMs() == 0 && h1.malformed() == 0);\n" +
+"\n" +
+"        var h2 = TestSessionSummarizer.summarize(new String[]{\n" +
+"            \"A, PASS, -5\", \"B, FAIL, 100, extra\", \", PASS, 100\", \"C, FAIL, 250\"\n" +
+"        });\n" +
+"        report(\"hidden2\", h2.total() == 1 && h2.passed() == 0 && h2.failed() == 1\n" +
+"            && h2.failedTests().equals(List.of(\"C\")) && h2.failedDurationMs() == 250 && h2.malformed() == 3);\n" +
+"\n" +
+"        var h3 = TestSessionSummarizer.summarize(new String[]{\n" +
+"            \" X , PASS , 100 \", \"X, FAIL, 200\", \"X, FAIL, 300\"\n" +
+"        });\n" +
+"        report(\"hidden3\", h3.total() == 3 && h3.passed() == 1 && h3.failed() == 2\n" +
+"            && h3.failedTests().equals(List.of(\"X\", \"X\")) && h3.failedDurationMs() == 500 && h3.malformed() == 0);\n" +
+"    }\n" +
+"}\n";
+
+  var JAVA_DEEP_MAIN =
+"import java.util.ArrayList;\n" +
+"import java.util.List;\n" +
+"\n" +
+"public class Main {\n" +
+"    static void report(String id, boolean ok) {\n" +
+"        System.out.println(\"CHECK \" + id + (ok ? \" PASS\" : \" FAIL\"));\n" +
+"    }\n" +
+"\n" +
+"    public static void main(String[] args) {\n" +
+"        var order = new ArrayList<String>();\n" +
+"        var sched = new BoundedJobScheduler(2);\n" +
+"        boolean s1 = sched.submit(\"a\", 1, () -> order.add(\"A\"));\n" +
+"        boolean s2 = sched.submit(\"b\", 5, () -> order.add(\"B\"));\n" +
+"        boolean s3 = sched.submit(\"c\", 9, () -> order.add(\"C\"));\n" +
+"        boolean c1 = sched.cancel(\"a\");\n" +
+"        boolean s4 = sched.submit(\"c\", 9, () -> order.add(\"C\"));\n" +
+"        int ran = sched.runAll();\n" +
+"        System.out.println(\"WORKED_OUT order=\" + order + \" runAll=\" + ran + \" size=\" + sched.size());\n" +
+"        report(\"worked\", s1 && s2 && !s3 && c1 && s4 && ran == 2\n" +
+"            && order.equals(List.of(\"C\", \"B\")) && sched.size() == 0 && !sched.runNext());\n" +
+"\n" +
+"        var order2 = new ArrayList<String>();\n" +
+"        var s10 = new BoundedJobScheduler(10);\n" +
+"        s10.submit(\"x\", 3, () -> order2.add(\"X\"));\n" +
+"        s10.submit(\"y\", 3, () -> order2.add(\"Y\"));\n" +
+"        s10.submit(\"z\", 3, () -> order2.add(\"Z\"));\n" +
+"        report(\"hidden1\", s10.runAll() == 3 && order2.equals(List.of(\"X\", \"Y\", \"Z\")));\n" +
+"\n" +
+"        var sd = new BoundedJobScheduler(3);\n" +
+"        boolean d1 = sd.submit(\"dup\", 1, () -> {});\n" +
+"        boolean d2 = sd.submit(\"dup\", 2, () -> {});\n" +
+"        boolean d3 = sd.cancel(\"nope\");\n" +
+"        boolean d4 = sd.cancel(\"dup\");\n" +
+"        boolean d5 = sd.submit(\"dup\", 2, () -> {});\n" +
+"        report(\"hidden2\", d1 && !d2 && !d3 && d4 && d5 && sd.size() == 1);\n" +
+"\n" +
+"        var order3 = new ArrayList<String>();\n" +
+"        var sp = new BoundedJobScheduler(3);\n" +
+"        sp.submit(\"low\", 1, () -> order3.add(\"L\"));\n" +
+"        sp.submit(\"high\", 9, () -> order3.add(\"H\"));\n" +
+"        boolean p1 = sp.runNext();\n" +
+"        boolean p2 = sp.runNext();\n" +
+"        boolean p3 = sp.runNext();\n" +
+"        report(\"hidden3\", p1 && p2 && !p3 && order3.equals(List.of(\"H\", \"L\")) && sp.size() == 0);\n" +
+"    }\n" +
+"}\n";
+
+  /* ================= Problem definitions ================= */
+  var PROBLEMS = {
+    python: { label: "Python",
+      screen: {
+        title: "Telemetry log verdict", kind: "python", fnName: "evaluate_log",
+        fileName: "solution.py",
+        hint: "Define evaluate_log(lines) exactly as specified. Press Run checks to test it against the worked example and additional checks.",
+        starter:
+"def evaluate_log(lines):\n" +
+"    # lines: list of strings, each \"timestamp, test_name, measured_value, limit_low, limit_high\"\n" +
+"    # Return: {\"results\": {test_name: \"PASS\"/\"FAIL\", ...},\n" +
+"    #          \"summary\": {\"pass\": int, \"fail\": int, \"skipped\": int}}\n" +
+"    results = {}\n" +
+"    skipped = 0\n" +
+"\n" +
+"    # Your code here\n" +
+"\n" +
+"    passed = sum(1 for v in results.values() if v == \"PASS\")\n" +
+"    failed = len(results) - passed\n" +
+"    return {\"results\": results, \"summary\": {\"pass\": passed, \"fail\": failed, \"skipped\": skipped}}\n",
+        body:
+'<p>You\'re given lines from a spacecraft test log. Each line is a comma-separated record:</p>' +
+'<pre><code>timestamp, test_name, measured_value, limit_low, limit_high</code></pre>' +
+'<p>Example line: <code>2026-11-06T09:15:02Z, bus_voltage, 28.4, 27.0, 29.5</code></p>' +
+'<p>Write a function <code>evaluate_log(lines)</code> that takes a list of these strings and returns a dictionary with two keys:</p>' +
+'<ul><li><code>"results"</code>: a dictionary mapping each test name to <code>"PASS"</code> or <code>"FAIL"</code>. A reading passes if <code>limit_low &lt;= measured_value &lt;= limit_high</code> (the limits are inclusive). A test may appear on several lines — the test\'s verdict is <code>"FAIL"</code> if <strong>any</strong> of its readings fail, otherwise <code>"PASS"</code>.</li>' +
+'<li><code>"summary"</code>: a dictionary <code>{"pass": &lt;number of passing tests&gt;, "fail": &lt;number of failing tests&gt;, "skipped": &lt;number of malformed lines&gt;}</code>.</li></ul>' +
+'<p>A line is malformed if it doesn\'t have exactly 5 fields, if the value or either limit isn\'t a number, if the test name is empty, or if <code>limit_low &gt; limit_high</code>. Malformed lines are skipped and counted; they never produce a verdict. Ignore whitespace around fields.</p>' +
+'<h3>Worked example — input</h3>' +
+'<pre>[\n  "2026-11-06T09:15:02Z, bus_voltage, 28.4, 27.0, 29.5",\n  "2026-11-06T09:15:03Z, bus_voltage, 29.9, 27.0, 29.5",\n  "2026-11-06T09:15:04Z, batt_temp, 22.0, 0.0, 40.0",\n  "garbage line",\n  "2026-11-06T09:15:05Z, batt_temp, not_a_number, 0.0, 40.0",\n]</pre>' +
+'<h3>Expected return value</h3>' +
+'<pre>{"results": {"bus_voltage": "FAIL", "batt_temp": "PASS"},\n "summary": {"pass": 1, "fail": 1, "skipped": 2}}</pre>' +
+'<p>(<code>bus_voltage</code> fails because 29.9 &gt; 29.5, even though its first reading passed.)</p>' +
+'<p><strong>You have 15 minutes. A complete, simple version beats an unfinished clever one.</strong></p>',
+        tests: PY_TESTS
+      },
+      deep: {
+        title: "Flaky test analyzer", kind: "python", fnName: "flakiest",
+        fileName: "solution.py",
+        hint: "Define flakiest(records, n) exactly as specified. Press Run checks to test it against the worked example and additional checks.",
+        starter:
+"def flakiest(records, n):\n" +
+"    # records: list of dicts {\"test_id\": str, \"run_id\": int,\n" +
+"    #                         \"result\": \"pass\"/\"fail\", \"duration_s\": float}\n" +
+"    # Return: list of {\"test_id\": str, \"runs\": int, \"pass_rate\": float,\n" +
+"    #                  \"avg_duration_s\": float} for the flakiest n tests,\n" +
+"    # sorted by pass_rate ascending, ties broken by test_id alphabetically.\n" +
+"    # A test is flaky only if it has BOTH pass and fail outcomes.\n" +
+"\n" +
+"    # Your code here\n" +
+"\n" +
+"    return []\n",
+        body:
+'<p>A test lab runs the same automated tests many times. Each run produces a record:</p>' +
+'<pre><code>{"test_id": "valve_cycle", "run_id": 12, "result": "pass", "duration_s": 31.5}</code></pre>' +
+'<p><code>result</code> is always <code>"pass"</code> or <code>"fail"</code>.</p>' +
+'<p>Write a function <code>flakiest(records, n)</code> where <code>records</code> is a list of these dictionaries. A test is <strong>flaky</strong> if it has both pass and fail outcomes across its runs. Return a list of the flakiest <code>n</code> tests — dictionaries with keys:</p>' +
+'<ul><li><code>"test_id"</code>, <code>"runs"</code> (total run count), <code>"pass_rate"</code> (passes / runs, a float), <code>"avg_duration_s"</code> (mean duration across its runs, a float)</li></ul>' +
+'<p>Sort by <code>pass_rate</code> ascending (flakiest first); break ties by <code>test_id</code> alphabetically. Tests that always pass or always fail are excluded. If fewer than <code>n</code> tests are flaky, return all of them.</p>' +
+'<h3>Worked example — records</h3>' +
+'<ul><li><code>valve_cycle</code>: pass 10.0s, fail 20.0s, pass 30.0s, fail 40.0s</li>' +
+'<li><code>rf_link</code>: pass 5.0s, pass 5.0s, pass 5.0s, fail 5.0s</li>' +
+'<li><code>thermal_soak</code>: pass 600.0s, pass 610.0s</li>' +
+'<li><code>deploy_seq</code>: fail 3.0s, fail 3.5s</li>' +
+'<li><code>gyro_cal</code>: fail 100.0s, pass 300.0s</li></ul>' +
+'<h3><code>flakiest(records, 2)</code> returns</h3>' +
+'<pre>[{"test_id": "gyro_cal", "runs": 2, "pass_rate": 0.5, "avg_duration_s": 200.0},\n {"test_id": "valve_cycle", "runs": 4, "pass_rate": 0.5, "avg_duration_s": 25.0}]</pre>' +
+'<p>(<code>thermal_soak</code> and <code>deploy_seq</code> are excluded — not flaky. <code>rf_link</code> at 0.75 is cut off by <code>n=2</code>.)</p>' +
+'<p><strong>You have 40 minutes.</strong></p>',
+        tests: PY_DEEP_TESTS
+      }
+    },
+    javascript: { label: "JavaScript",
+      screen: {
+        title: "Log level counter", kind: "js", fnName: "analyzeLog",
+        fileName: "solution.js",
+        hint: "Define analyzeLog(lines) exactly as specified. Press Run checks to test it against the worked example and additional checks.",
+        starter:
+"function analyzeLog(lines) {\n" +
+"  const counts = { INFO: 0, WARN: 0, ERROR: 0 };\n" +
+"  const errorMessages = [];\n" +
+"  let ignored = 0;\n" +
+"\n" +
+"  // Your code here\n" +
+"\n" +
+"  return { counts, errorMessages, ignored };\n" +
+"}\n",
+        body:
+'<p>A test rig writes log lines in this format:</p>' +
+'<pre><code>[timestamp] [LEVEL] message</code></pre>' +
+'<p>Example line: <code>[2026-11-06T09:00:02Z] [WARN] rail voltage drifting</code></p>' +
+'<p><code>LEVEL</code> is one of <code>INFO</code>, <code>WARN</code>, or <code>ERROR</code>. Write a function <code>analyzeLog(lines)</code> that takes an array of these strings and returns an object with:</p>' +
+'<ul><li><code>counts</code>: an object <code>{ INFO: n, WARN: n, ERROR: n }</code> — how many entries at each level (all three keys always present, even when zero)</li>' +
+'<li><code>errorMessages</code>: the message text of every <code>ERROR</code> entry, in the order they appeared</li>' +
+'<li><code>ignored</code>: how many lines did not match the format</li></ul>' +
+'<p>A line matches the format only if it starts with a bracketed timestamp (any non-empty text in the first brackets), then a space, then a bracketed level that is exactly <code>INFO</code>, <code>WARN</code>, or <code>ERROR</code>, then a space, then a non-empty message. Anything else — a different level like <code>DEBUG</code>, a missing bracket, an empty message — is ignored and counted in <code>ignored</code>.</p>' +
+'<h3>Worked example — input</h3>' +
+'<pre>[\n  "[2026-11-06T09:00:01Z] [INFO] test session started",\n  "[2026-11-06T09:00:02Z] [WARN] rail voltage drifting",\n  "[2026-11-06T09:00:03Z] [ERROR] bus voltage out of range",\n  "[2026-11-06T09:00:04Z] [INFO] retrying measurement",\n  "not a log line",\n  "[2026-11-06T09:00:05Z] [ERROR] thermal limit exceeded",\n  "[2026-11-06T09:00:06Z] [DEBUG] heartbeat",\n]</pre>' +
+'<h3>Expected return value</h3>' +
+'<pre>{ counts: { INFO: 2, WARN: 1, ERROR: 2 },\n  errorMessages: ["bus voltage out of range", "thermal limit exceeded"],\n  ignored: 2 }</pre>' +
+'<p>(The garbage line and the <code>DEBUG</code> line are the two ignored lines.)</p>' +
+'<p>You may parse with a regular expression or by hand — your choice.</p>' +
+'<p><strong>You have 15 minutes. A complete, simple version beats an unfinished clever one.</strong></p>',
+        tests: JS_TESTS
+      },
+      deep: {
+        title: "Retry with backoff", kind: "jsdeep", fnName: "withRetry",
+        fileName: "solution.js",
+        hint: "Define async function withRetry(operation, options) exactly as specified. Press Run checks to test it against the worked examples and additional checks (a fake sleep records the delays, so runs are instant).",
+        starter:
+"async function withRetry(operation, options = {}) {\n" +
+"  // operation: async function called as operation(attemptNumber), attemptNumber starts at 1\n" +
+"  // options: { maxAttempts = 3, baseDelayMs = 100, maxDelayMs = no cap, sleep }\n" +
+"  // Use options.sleep(ms) for EVERY wait — never setTimeout directly here\n" +
+"  // (a setTimeout-based default sleep is fine when options.sleep isn't provided).\n" +
+"  // On total failure, throw an Error with extra properties:\n" +
+"  //   attempts = number of attempts made, cause = the final attempt's error.\n" +
+"\n" +
+"  // Your code here\n" +
+"\n" +
+"  throw new Error(\"Not implemented yet\");\n" +
+"}\n",
+        body:
+'<p>Test hardware drops calls. You need a helper that runs an asynchronous operation and retries it when it fails.</p>' +
+'<p>Implement, in plain JavaScript (no libraries):</p>' +
+'<pre><code>async function withRetry(operation, options)</code></pre>' +
+'<ul><li><code>operation</code> is an async function. Call it with the attempt number (1 for the first try, 2 for the first retry, and so on) and <code>await</code> its result. If it succeeds, return its value.</li>' +
+'<li><code>options</code>: <code>{ maxAttempts, baseDelayMs, maxDelayMs, sleep }</code><ul>' +
+'<li><code>maxAttempts</code>: total number of tries, including the first (so <code>maxAttempts: 1</code> means "no retries").</li>' +
+'<li>Between attempts, wait before trying again: the first wait is <code>baseDelayMs</code>, and each later wait is double the previous one, but never more than <code>maxDelayMs</code>. <strong>No wait after the final attempt.</strong></li>' +
+'<li><code>sleep</code> is an async function <code>(ms) =&gt; Promise</code> used for every wait. It is injected so tests can substitute a fake — your code must never call <code>setTimeout</code> directly except inside a default <code>sleep</code> used when the option isn\'t provided.</li>' +
+'<li>Defaults when options are omitted: <code>maxAttempts: 3</code>, <code>baseDelayMs: 100</code>, <code>maxDelayMs:</code> no cap.</li></ul></li>' +
+'<li>If every attempt fails, throw an <code>Error</code> whose message says how many attempts were made, with two extra properties: <code>attempts</code> (the number of attempts made) and <code>cause</code> (the error thrown by the final attempt).</li></ul>' +
+'<h3>Worked examples</h3>' +
+'<p>(Using a fake <code>sleep</code> that just records the delays it is asked for:)</p>' +
+'<ul><li>An operation that fails on attempts 1 and 2 and returns <code>"ok"</code> on attempt 3, with <code>maxAttempts: 5, baseDelayMs: 100, maxDelayMs: 1000</code> → returns <code>"ok"</code>; recorded delays: <code>[100, 200]</code>.</li>' +
+'<li>An operation that always fails, with <code>maxAttempts: 3, baseDelayMs: 100, maxDelayMs: 150</code> → throws an error with <code>attempts: 3</code> and <code>cause</code> = the operation\'s error; recorded delays: <code>[100, 150]</code> (the second delay would be 200 but the cap applies).</li></ul>' +
+'<p><strong>You have 40 minutes.</strong></p>',
+        workedExpected: {result: "ok", delays: [100, 200]}
+      }
+    },
+    cpp: { label: "C++",
+      screen: {
+        title: "Ring buffer", kind: "compiled",
+        fileName: "solution.cpp", candidateFile: "main.cpp",
+        hint: "Press Run checks to compile and run your code against the worked example and additional checks. Only your code is sent to the execution service — never your name or email. Do NOT write main() — the checks supply their own.",
+        starter:
+"#include <cstddef>\n" +
+"#include <vector>\n" +
+"\n" +
+"// Do NOT write main() — the automated checks supply their own.\n" +
+"// Implement every method of this class, exactly with these names and signatures.\n" +
+"class IntRingBuffer {\n" +
+"public:\n" +
+"    explicit IntRingBuffer(std::size_t capacity);  // you may assume capacity >= 1\n" +
+"    void push(int value);        // if the buffer is full, the OLDEST value is overwritten\n" +
+"    bool pop(int& out);          // removes the oldest value into out; returns false if empty\n" +
+"    bool empty() const;\n" +
+"    bool full() const;\n" +
+"    std::size_t size() const;    // number of values currently stored\n" +
+"    std::size_t capacity() const;\n" +
+"\n" +
+"private:\n" +
+"    // Your members here\n" +
+"};\n" +
+"\n" +
+"// Your implementation here\n",
+        body:
+'<p>Implement a fixed-capacity circular buffer of <code>int</code>s in C++17:</p>' +
+'<pre><code>class IntRingBuffer {\npublic:\n    explicit IntRingBuffer(std::size_t capacity);  // you may assume capacity &gt;= 1\n    void push(int value);        // if the buffer is full, the OLDEST value is overwritten\n    bool pop(int&amp; out);          // removes the oldest value into out; returns false if empty\n    bool empty() const;\n    bool full() const;\n    std::size_t size() const;    // number of values currently stored\n    std::size_t capacity() const;\n};</code></pre>' +
+'<p>Values come out in FIFO order. Worked example with capacity 3:</p>' +
+'<ul><li>push 1, push 2, push 3 → <code>full()</code> is true, <code>size()</code> is 3</li>' +
+'<li>push 4 → the buffer now holds 2, 3, 4 (1 was overwritten)</li>' +
+'<li>pop → 2, pop → 3, pop → 4, pop → returns <code>false</code></li></ul>' +
+'<p>Use the class skeleton in the editor exactly — same class and method names — and do not write <code>main()</code>; the automated checks supply their own.</p>' +
+'<p><strong>You have 15 minutes. Correct index handling matters more than extras.</strong></p>',
+        driver: CPP_SCREEN_DRIVER,
+        workedOutExpected: "pops_after_overwrite=2,3,4 (after push 1, 2, 3, 4 into a capacity-3 buffer)"
+      },
+      deep: {
+        title: "Command packet parser", kind: "compiled",
+        fileName: "solution.cpp", candidateFile: "main.cpp",
+        hint: "Press Run checks to compile and run your code against the worked examples and additional checks. Only your code is sent to the execution service — never your name or email. Do NOT write main() — the checks supply their own.",
+        starter:
+"#include <cstddef>\n" +
+"#include <cstdint>\n" +
+"#include <vector>\n" +
+"\n" +
+"// Do NOT write main() — the automated checks supply their own.\n" +
+"// Implement parsePacket exactly with these names and types.\n" +
+"enum class ParseError { None, TooShort, BadHeader, BadLength, BadChecksum };\n" +
+"\n" +
+"struct ParseResult {\n" +
+"    ParseError error;\n" +
+"    std::vector<std::uint8_t> payload;   // filled only when error == ParseError::None\n" +
+"};\n" +
+"\n" +
+"ParseResult parsePacket(const std::vector<std::uint8_t>& packet) {\n" +
+"    // Your code here\n" +
+"    return {ParseError::TooShort, {}};\n" +
+"}\n",
+        body:
+'<p>A device sends command/telemetry packets in this byte format:</p>' +
+'<table><tr><th>Byte(s)</th><th>Meaning</th></tr>' +
+'<tr><td>0</td><td>Header — always <code>0xA5</code></td></tr>' +
+'<tr><td>1</td><td>Payload length <code>N</code> (0–255)</td></tr>' +
+'<tr><td>2 … 2+N−1</td><td>Payload (N bytes)</td></tr>' +
+'<tr><td>2+N</td><td>Checksum — XOR of all preceding bytes (header, length, and payload)</td></tr></table>' +
+'<p>So a complete packet is <code>N + 3</code> bytes. Write, in C++17:</p>' +
+'<pre><code>enum class ParseError { None, TooShort, BadHeader, BadLength, BadChecksum };\nstruct ParseResult {\n    ParseError error;\n    std::vector&lt;std::uint8_t&gt; payload;   // filled only when error == None\n};\nParseResult parsePacket(const std::vector&lt;std::uint8_t&gt;&amp; packet);</code></pre>' +
+'<p><code>parsePacket</code> receives exactly one packet (the whole buffer is the packet). Validation order and meanings:</p>' +
+'<ul><li>Fewer than 3 bytes → <code>TooShort</code></li>' +
+'<li>Byte 0 isn\'t <code>0xA5</code> → <code>BadHeader</code></li>' +
+'<li>Buffer size isn\'t <code>N + 3</code> → <code>BadLength</code></li>' +
+'<li>Checksum mismatch → <code>BadChecksum</code></li>' +
+'<li>Otherwise → <code>None</code>, with the payload extracted</li></ul>' +
+'<h3>Worked examples</h3>' +
+'<ul><li><code>{0xA5, 0x02, 0x01, 0x02, 0xA4}</code> → <code>None</code>, payload <code>{1, 2}</code> (checksum: <code>A5^02^01^02 = A4</code>)</li>' +
+'<li><code>{0xA5, 0x02, 0x01, 0x02, 0x00}</code> → <code>BadChecksum</code></li>' +
+'<li><code>{0x5A, 0x02, 0x01, 0x02, 0xA4}</code> → <code>BadHeader</code></li>' +
+'<li><code>{0xA5, 0x02}</code> → <code>TooShort</code></li>' +
+'<li><code>{0xA5, 0x03, 0x01, 0x02, 0xA4}</code> → <code>BadLength</code></li>' +
+'<li><code>{0xA5, 0x00, 0xA5}</code> → <code>None</code>, empty payload</li></ul>' +
+'<p>Use the types in the editor exactly — same names — and do not write <code>main()</code>; the automated checks supply their own.</p>' +
+'<p><strong>You have 40 minutes.</strong></p>',
+        driver: CPP_DEEP_DRIVER,
+        workedOutExpected: "None [1 2] | BadChecksum | BadHeader | TooShort | BadLength | None []"
+      }
+    },
+    csharp: { label: "C#",
+      screen: {
+        title: "Test result summarizer", kind: "compiled",
+        fileName: "solution.cs", candidateFile: "Solution.cs",
+        hint: "Press Run checks to compile and run your code against the worked example and additional checks. Only your code is sent to the execution service — never your name or email. Do NOT add a Main method — the checks supply their own.",
+        starter:
+"using System;\n" +
+"using System.Collections.Generic;\n" +
+"\n" +
+"// Do NOT add a Main method — the automated checks supply their own.\n" +
+"// Implement Summarize exactly with these names and types.\n" +
+"public static class TestResultSummarizer\n" +
+"{\n" +
+"    public sealed class Summary\n" +
+"    {\n" +
+"        public int Passed { get; set; }\n" +
+"        public int Failed { get; set; }\n" +
+"        public int Invalid { get; set; }\n" +
+"        public List<string> FailedTests { get; set; } = new List<string>();\n" +
+"    }\n" +
+"\n" +
+"    public static Summary Summarize(IEnumerable<string> entries)\n" +
+"    {\n" +
+"        // Your code here\n" +
+"        return new Summary();\n" +
+"    }\n" +
+"}\n",
+        body:
+'<p>A test runner produces one string per test, in the format <code>"TestName:RESULT"</code>, where <code>RESULT</code> is exactly <code>PASS</code> or <code>FAIL</code>. Some entries are malformed.</p>' +
+'<p>Write the method <code>Summarize</code> in the <code>TestResultSummarizer</code> class in the editor (keep the class, method, and <code>Summary</code> property names exactly as given — the automated checks call them). It takes an <code>IEnumerable&lt;string&gt;</code> and returns a <code>Summary</code> with:</p>' +
+'<ul><li><code>Passed</code>: the number of passing tests</li><li><code>Failed</code>: the number of failing tests</li><li><code>Invalid</code>: the number of invalid entries</li><li><code>FailedTests</code>: the names of the failed tests, in the order they appeared</li></ul>' +
+'<p>An entry is invalid if it has no colon, an empty test name, or a result that is not exactly <code>PASS</code> or <code>FAIL</code>. Whitespace around the name and result should be ignored.</p>' +
+'<h3>Worked example — input</h3>' +
+'<pre>["BusVoltage:PASS", "BattTemp:FAIL", "RFLink:PASS", "badentry", "GyroCal:FAIL", "DeploySeq:MAYBE"]</pre>' +
+'<h3>Expected output</h3>' +
+'<pre>Passed = 2, Failed = 2, Invalid = 2, FailedTests = ["BattTemp", "GyroCal"]</pre>' +
+'<p>LINQ is allowed. Do not add a <code>Main</code> method — the automated checks supply their own.</p>' +
+'<p><strong>You have 15 minutes.</strong></p>',
+        driver: CS_SCREEN_DRIVER_TAIL,
+        workedOutExpected: "Passed=2 Failed=2 Invalid=2 FailedTests=[BattTemp, GyroCal]"
+      },
+      deep: {
+        title: "Rate-limited command queue", kind: "compiled",
+        fileName: "solution.cs", candidateFile: "Solution.cs",
+        hint: "Press Run checks to compile and run your code against the worked example and additional checks (with a hand-controlled fake clock, so runs are instant). Only your code is sent to the execution service — never your name or email. Do NOT add a Main method — the checks supply their own.",
+        starter:
+"using System;\n" +
+"using System.Collections.Generic;\n" +
+"\n" +
+"// Do NOT add a Main method — the automated checks supply their own.\n" +
+"// Implement this class exactly with these names and signatures.\n" +
+"// The current time must come ONLY from the injected clock delegate.\n" +
+"public sealed class RateLimitedCommandQueue\n" +
+"{\n" +
+"    private readonly int _maxPerWindow;\n" +
+"    private readonly TimeSpan _window;\n" +
+"    private readonly Func<DateTimeOffset> _clock;\n" +
+"\n" +
+"    public RateLimitedCommandQueue(int maxPerWindow, TimeSpan window, Func<DateTimeOffset> clock)\n" +
+"    {\n" +
+"        _maxPerWindow = maxPerWindow;\n" +
+"        _window = window;\n" +
+"        _clock = clock;\n" +
+"    }\n" +
+"\n" +
+"    public int PendingCount { get { return 0; } }  // commands still queued — implement me\n" +
+"\n" +
+"    public void Submit(Action command)  // queues a command; never executes it, never blocks\n" +
+"    {\n" +
+"        // Your code here\n" +
+"    }\n" +
+"\n" +
+"    public int RunPending()  // executes queued commands while the window has capacity; returns how many ran\n" +
+"    {\n" +
+"        // Your code here\n" +
+"        return 0;\n" +
+"    }\n" +
+"}\n",
+        body:
+'<p>A test executive submits commands (actions) to a piece of hardware, but the hardware must not receive more than <strong>N commands in any trailing time window W</strong> (e.g., at most 3 commands in any 10-second span).</p>' +
+'<p>Implement the class <code>RateLimitedCommandQueue</code> in the editor (keep the class, constructor, and member names exactly as given — the automated checks use them):</p>' +
+'<pre><code>public RateLimitedCommandQueue(int maxPerWindow, TimeSpan window, Func&lt;DateTimeOffset&gt; clock)\npublic void Submit(Action command)   // queues a command\npublic int RunPending()              // executes queued commands while the window has capacity;\n                                     // returns how many ran\npublic int PendingCount { get; }     // commands still queued</code></pre>' +
+'<p>Rules:</p>' +
+'<ul><li>Commands execute in submission order (FIFO).</li>' +
+'<li><code>RunPending</code> executes commands until either the queue is empty or executing one more would exceed N executions within the trailing window ending now. An execution stops counting against the limit once it is W or more in the past.</li>' +
+'<li>The current time must come <strong>only</strong> from the injected <code>clock</code> delegate — never from <code>DateTimeOffset.Now</code> directly. (This is what makes the class testable.)</li>' +
+'<li><code>Submit</code> must never execute the command itself, and must never block.</li></ul>' +
+'<h3>Worked example</h3>' +
+'<p><code>maxPerWindow = 3</code>, <code>window = 10 seconds</code>, clock starts at t=0; five commands c1…c5 are submitted (each just records its name):</p>' +
+'<ul><li><code>RunPending()</code> at t=0 → returns 3, executed [c1, c2, c3], <code>PendingCount</code> = 2</li>' +
+'<li><code>RunPending()</code> at t=0 again → returns 0</li>' +
+'<li>Advance the clock to t=10s → <code>RunPending()</code> returns 2, executed [c1, c2, c3, c4, c5], <code>PendingCount</code> = 0</li></ul>' +
+'<p>Do not add a <code>Main</code> method — the automated checks supply their own, with a hand-controlled clock.</p>' +
+'<p><strong>You have 40 minutes.</strong></p>',
+        driver: CS_DEEP_DRIVER_TAIL,
+        workedOutExpected: "first=3 pending=2 second=0 after10s=2 pendingEnd=0 executed=[cmd1,cmd2,cmd3,cmd4,cmd5]"
+      }
+    },
+    java: { label: "Java",
+      screen: {
+        title: "Test session summarizer", kind: "compiled",
+        fileName: "TestSessionSummarizer.java", candidateFile: "TestSessionSummarizer.java",
+        hint: "Press Run checks to compile and run your code against the worked example and additional checks. Only your code is sent to the execution service — never your name or email. Do NOT add a class named Main — the checks supply their own.",
+        starter:
+"import java.util.ArrayList;\n" +
+"import java.util.List;\n" +
+"\n" +
+"// Do NOT add a class named Main — the automated checks supply their own.\n" +
+"// Implement summarize exactly with these names and types.\n" +
+"public class TestSessionSummarizer {\n" +
+"\n" +
+"    public record Summary(int total, int passed, int failed,\n" +
+"                          List<String> failedTests, long failedDurationMs,\n" +
+"                          int malformed) {}\n" +
+"\n" +
+"    public static Summary summarize(String[] lines) {\n" +
+"        // Your code here\n" +
+"        return new Summary(0, 0, 0, List.of(), 0, 0);\n" +
+"    }\n" +
+"}\n",
+        body:
+'<p>A test session produces one string per test run, in the format <code>"TestName, RESULT, durationMs"</code> — for example <code>"BattTemp, FAIL, 3400"</code>. <code>RESULT</code> is exactly <code>PASS</code> or <code>FAIL</code>, and <code>durationMs</code> is a non-negative integer. Some entries are malformed.</p>' +
+'<p>Write the method <code>summarize</code> in the <code>TestSessionSummarizer</code> class in the editor (keep the class, record, and method names exactly as given — the automated checks call them). It takes an array of these strings and returns a <code>Summary</code> containing:</p>' +
+'<ul><li><code>total</code>: the number of valid entries</li><li><code>passed</code>: how many valid entries passed</li><li><code>failed</code>: how many valid entries failed</li><li><code>failedTests</code>: the names of the failed tests, in the order they appeared</li><li><code>failedDurationMs</code>: the total duration of the failed tests only</li><li><code>malformed</code>: how many entries were invalid</li></ul>' +
+'<p>Each line is one test run — if the same test name appears twice, count both runs. An entry is invalid if it doesn\'t have exactly 3 comma-separated fields, the name is empty, the result is not exactly <code>PASS</code> or <code>FAIL</code>, or the duration is not a non-negative integer. Ignore whitespace around the fields.</p>' +
+'<h3>Worked example — input</h3>' +
+'<pre>["BusVoltage, PASS, 1200", "BattTemp, FAIL, 3400", "RFLink, PASS, 800",\n "bad line", "GyroCal, FAIL, 2600", "DeploySeq, MAYBE, 100",\n "ThermalSoak, PASS, not_a_number"]</pre>' +
+'<h3>Expected output</h3>' +
+'<pre>total = 4, passed = 2, failed = 2, failedTests = ["BattTemp", "GyroCal"], failedDurationMs = 6000, malformed = 3</pre>' +
+'<p>Streams are allowed. Do not add a class named <code>Main</code> — the automated checks supply their own.</p>' +
+'<p><strong>You have 15 minutes.</strong></p>',
+        driver: JAVA_SCREEN_MAIN,
+        workedOutExpected: "total=4 passed=2 failed=2 failedTests=[BattTemp, GyroCal] failedDurationMs=6000 malformed=3"
+      },
+      deep: {
+        title: "Bounded job scheduler", kind: "compiled",
+        fileName: "BoundedJobScheduler.java", candidateFile: "BoundedJobScheduler.java",
+        hint: "Press Run checks to compile and run your code against the worked examples and additional checks. Only your code is sent to the execution service — never your name or email. Do NOT add a class named Main — the checks supply their own.",
+        starter:
+"import java.util.ArrayList;\n" +
+"import java.util.List;\n" +
+"\n" +
+"// Do NOT add a class named Main — the automated checks supply their own.\n" +
+"// Implement this class exactly with these names and signatures.\n" +
+"public class BoundedJobScheduler {\n" +
+"\n" +
+"    public BoundedJobScheduler(int capacity) {  // max jobs waiting at once; capacity >= 1\n" +
+"        // Your code here\n" +
+"    }\n" +
+"\n" +
+"    public boolean submit(String jobId, int priority, Runnable job) {\n" +
+"        // Your code here\n" +
+"        return false;\n" +
+"    }\n" +
+"\n" +
+"    public boolean cancel(String jobId) {\n" +
+"        // Your code here\n" +
+"        return false;\n" +
+"    }\n" +
+"\n" +
+"    public boolean runNext() {\n" +
+"        // Your code here\n" +
+"        return false;\n" +
+"    }\n" +
+"\n" +
+"    public int runAll() {\n" +
+"        // Your code here\n" +
+"        return 0;\n" +
+"    }\n" +
+"\n" +
+"    public int size() {\n" +
+"        // Your code here\n" +
+"        return 0;\n" +
+"    }\n" +
+"}\n",
+        body:
+'<p>A test executive keeps a queue of jobs waiting to run on a rig. Implement the class <code>BoundedJobScheduler</code> in the editor (keep the class and method names exactly as given — the automated checks call them):</p>' +
+'<pre><code>public class BoundedJobScheduler {\n    public BoundedJobScheduler(int capacity)   // max jobs waiting at once; capacity &gt;= 1\n    public boolean submit(String jobId, int priority, Runnable job)\n    public boolean cancel(String jobId)\n    public boolean runNext()\n    public int runAll()\n    public int size()\n}</code></pre>' +
+'<p>Rules:</p>' +
+'<ul><li>A <strong>higher</strong> priority number means a more urgent job. <code>runNext</code> runs the highest-priority waiting job; jobs with equal priority run in submission order (FIFO within a priority). <code>runNext</code> returns <code>false</code> if nothing is waiting. <code>runAll</code> drains the queue and returns how many jobs ran.</li>' +
+'<li><code>submit</code> returns <code>false</code> — and queues nothing — if the scheduler already holds <code>capacity</code> waiting jobs, or if a job with the same <code>jobId</code> is already waiting. Otherwise it queues the job and returns <code>true</code>. Once a job has run or been cancelled, its id may be reused.</li>' +
+'<li><code>cancel</code> removes a waiting job so it will never run, and returns <code>true</code>. It returns <code>false</code> if no job with that id is waiting (unknown id, already run, or already cancelled).</li>' +
+'<li>Jobs are plain <code>Runnable</code>s. Running a job means calling its <code>run()</code> — synchronously, on the caller\'s thread.</li></ul>' +
+'<h3>Worked example — capacity 2</h3>' +
+'<ul><li><code>submit("a", 1, A)</code> → <code>true</code>; <code>submit("b", 5, B)</code> → <code>true</code></li>' +
+'<li><code>submit("c", 9, C)</code> → <code>false</code> (full)</li>' +
+'<li><code>cancel("a")</code> → <code>true</code></li>' +
+'<li><code>submit("c", 9, C)</code> → <code>true</code></li>' +
+'<li><code>runAll()</code> → returns <code>2</code>, and the execution order is <code>[C, B]</code> (priority 9 before 5; A was cancelled)</li>' +
+'<li><code>size()</code> → <code>0</code>; <code>runNext()</code> → <code>false</code></li></ul>' +
+'<p>And with capacity 10: submitting <code>x</code>, <code>y</code>, <code>z</code> all at priority 3, then <code>runAll()</code>, runs them in submission order <code>[X, Y, Z]</code>.</p>' +
+'<p>Do not add a class named <code>Main</code> — the automated checks supply their own.</p>' +
+'<p><strong>You have 40 minutes.</strong></p>',
+        driver: JAVA_DEEP_MAIN,
+        workedOutExpected: "order=[C, B] runAll=2 size=0"
+      }
+    }
+  };
+
+  /* ================= State ================= */
+  var state = {
+    name: "", email: "", lang: "python", tier: "screen", problem: null, totalSeconds: TIERS.screen.seconds,
+    startedAt: null, remaining: TIERS.screen.seconds, timerId: null, finished: false, expired: false,
+    lastCheck: null, autoSendAttempted: false,
+    pasteAttempts: 0, problemCopyAttempts: 0, departures: [], away: false, lastDepartureAt: 0
+  };
+
+  var el = function(id){ return document.getElementById(id); };
+  var startForm = el("startForm"), viewStart = el("view-start"), viewAssess = el("view-assessment"), viewResults = el("view-results");
+  var editor = el("codeEditor");
+
+  function fmtTime(s){ s = Math.max(0, Math.round(s)); var m = Math.floor(s/60), r = s%60; return (m<10?"0":"")+m+":"+(r<10?"0":"")+r; }
+  function deepEqual(a, b){
+    if (a === b) return true;
+    if (a === null || b === null || typeof a !== "object" || typeof b !== "object") return false;
+    if (Array.isArray(a) !== Array.isArray(b)) return false;
+    if (Array.isArray(a)){ if (a.length !== b.length) return false; for (var i=0;i<a.length;i++){ if(!deepEqual(a[i],b[i])) return false; } return true; }
+    var ka = Object.keys(a), kb = Object.keys(b);
+    if (ka.length !== kb.length) return false;
+    for (var j=0;j<ka.length;j++){ var k = ka[j]; if (!Object.prototype.hasOwnProperty.call(b,k) || !deepEqual(a[k], b[k])) return false; }
+    return true;
+  }
+  function clone(v){ return JSON.parse(JSON.stringify(v)); }
+  function truncate(s, n){ s = String(s || ""); return s.length > n ? s.slice(0, n) + "\n… (truncated)" : s; }
+
+  editor.addEventListener("keydown", function(e){
+    if (e.key === "Tab"){
+      e.preventDefault();
+      var s = editor.selectionStart, en = editor.selectionEnd;
+      editor.setRangeText("  ", s, en, "end");
+      editor.dispatchEvent(new Event("input"));
+    }
+  });
+
+  /* ================= Anti-cheat protections =================
+     Tracking is active only while the assessment is running:
+     from Start until results are generated (state.finished). */
+  function antiCheatActive(){ return !!(state.problem && state.startedAt && !state.finished); }
+  var pasteNoticeTimer = null;
+  function showPasteNotice(){
+    var n = el("pasteNotice");
+    if (!n) return;
+    n.classList.remove("hidden");
+    if (pasteNoticeTimer) clearTimeout(pasteNoticeTimer);
+    pasteNoticeTimer = setTimeout(function(){ n.classList.add("hidden"); }, 3500);
+  }
+  function countPasteAttempt(e){
+    if (e) e.preventDefault();
+    if (!antiCheatActive()) return;
+    state.pasteAttempts += 1;
+    showPasteNotice();
+  }
+  editor.addEventListener("paste", countPasteAttempt);
+  editor.addEventListener("drop", countPasteAttempt);
+  editor.addEventListener("dragover", function(e){ e.preventDefault(); });
+  editor.addEventListener("contextmenu", function(e){ e.preventDefault(); });
+
+  function updateDepartureIndicator(){
+    var ind = el("departureIndicator");
+    if (!ind) return;
+    if (state.departures.length > 0){
+      ind.textContent = "⚠ Leaving this page is recorded (" + state.departures.length + ").";
+      ind.classList.remove("hidden");
+    } else {
+      ind.textContent = "";
+      ind.classList.add("hidden");
+    }
+  }
+  function recordDeparture(){
+    if (!antiCheatActive()) return;
+    var now = Date.now();
+    if (state.away) return;
+    if (state.lastDepartureAt && (now - state.lastDepartureAt) < 2000) return;
+    state.away = true;
+    state.lastDepartureAt = now;
+    var elapsed = state.totalSeconds - state.remaining;
+    if (elapsed < 0) elapsed = 0;
+    state.departures.push(fmtTime(elapsed));
+    updateDepartureIndicator();
+  }
+  function recordReturn(){
+    state.away = false;
+    state.lastDepartureAt = 0;
+  }
+  document.addEventListener("visibilitychange", function(){
+    if (document.hidden || document.visibilityState === "hidden") recordDeparture();
+    else recordReturn();
+  });
+  window.addEventListener("blur", recordDeparture);
+  window.addEventListener("focus", recordReturn);
+
+  function countProblemCopyAttempt(e){
+    if (e && e._acCounted) { e.preventDefault(); return; }
+    if (e){ e.preventDefault(); try { e._acCounted = true; } catch(err){} }
+    if (!antiCheatActive()) return;
+    state.problemCopyAttempts += 1;
+  }
+  function isInsideProblem(node){
+    if (!node) return false;
+    var pb = el("problemBody"), pt = el("problemTitle");
+    var n = (node.nodeType === 3) ? node.parentNode : node;
+    while (n){
+      if (n === pb || n === pt) return true;
+      n = n.parentNode;
+    }
+    return false;
+  }
+  // Copy guard on the problem container itself (covers a copy event dispatched there)
+  ["problemBody", "problemTitle"].forEach(function(id){
+    var node = el(id);
+    if (node) node.addEventListener("copy", countProblemCopyAttempt);
+  });
+  // Copy guard via the document (covers keyboard/menu copy with a selection in the problem)
+  document.addEventListener("copy", function(e){
+    var sel = null;
+    try { sel = window.getSelection ? window.getSelection() : null; } catch(err){ sel = null; }
+    var inside = false;
+    if (sel){
+      if (isInsideProblem(sel.anchorNode) || isInsideProblem(sel.focusNode)) inside = true;
+    }
+    if (!inside && e && e.target && isInsideProblem(e.target)) inside = true;
+    if (inside) countProblemCopyAttempt(e);
+  });
+
+  function resetAntiCheat(){
+    state.pasteAttempts = 0;
+    state.problemCopyAttempts = 0;
+    state.departures = [];
+    state.away = false;
+    state.lastDepartureAt = 0;
+    var n = el("pasteNotice"); if (n) n.classList.add("hidden");
+    updateDepartureIndicator();
+  }
+  function departureSummaryText(){
+    if (!state.departures.length) return "None";
+    return state.departures.length + " (at " + state.departures.join(", ") + ")";
+  }
+  function departureTimesText(){
+    return state.departures.length ? state.departures.join(", ") : "None";
+  }
+
+  /* ================= Timer ================= */
+  function updateTimerUI(){
+    var t = fmtTime(state.remaining);
+    el("bigTimer").textContent = t;
+    el("headerTimer").textContent = t + " remaining";
+    if (state.remaining <= 60){ el("headerTimer").classList.add("urgent"); el("bigTimer").style.color = "var(--bad)"; }
+  }
+  function tick(){
+    state.remaining -= 1;
+    if (state.remaining <= 0){
+      state.remaining = 0; updateTimerUI();
+      clearInterval(state.timerId); state.timerId = null;
+      if (!state.finished){ state.expired = true; editor.readOnly = true; el("runStatus").textContent = "Time expired — the editor is locked and your results have been generated."; finishAssessment(true); }
+      return;
+    }
+    updateTimerUI();
+  }
+
+  /* ================= Python (Pyodide) ================= */
+  var pyodide = null, pyodideState = "idle";
+  function setRuntimeUI(){
+    var rs = el("runtimeState"), runBtn = el("runBtn");
+    if (state.problem && state.problem.kind === "compiled"){
+      rs.textContent = "Auto-scored via code-execution service"; return;
+    }
+    if (state.lang !== "python"){ rs.textContent = ""; return; }
+    if (pyodideState === "loading"){ rs.textContent = "Python runtime loading…"; runBtn.disabled = true; runBtn.textContent = "Python runtime loading…"; }
+    else if (pyodideState === "ready"){ rs.textContent = "Python ready"; runBtn.disabled = false; runBtn.textContent = "Run checks"; }
+    else if (pyodideState === "failed"){ rs.textContent = "Python runtime unavailable"; runBtn.disabled = true; runBtn.textContent = "Run checks (unavailable)"; }
+    else { rs.textContent = ""; }
+  }
+  function loadPython(){
+    if (pyodideState === "loading" || pyodideState === "ready") return;
+    if (typeof loadPyodide === "undefined"){ pyodideState = "failed"; setRuntimeUI(); return; }
+    pyodideState = "loading"; setRuntimeUI();
+    loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/" }).then(function(py){
+      pyodide = py; pyodideState = "ready"; setRuntimeUI();
+    }).catch(function(){ pyodideState = "failed"; setRuntimeUI(); });
+  }
+  function runPythonChecks(code){
+    var tests = state.problem.tests.map(function(t){ return {args: clone(t.args), expected: t.expected}; });
+    var harness =
+      code + "\n\n" +
+      "import json as _json\n" +
+      "_tests = _json.loads(" + JSON.stringify(JSON.stringify(tests)) + ")\n" +
+      "_out = []\n" +
+      "for _t in _tests:\n" +
+      "    try:\n" +
+      "        _r = " + state.problem.fnName + "(*_t['args'])\n" +
+      "        _out.append({'ok': True, 'result': _r})\n" +
+      "    except Exception as _e:\n" +
+      "        _out.append({'ok': False, 'error': type(_e).__name__ + ': ' + str(_e)})\n" +
+      "_json.dumps(_out)\n";
+    var raw = pyodide.runPython(harness);
+    var results = JSON.parse(raw);
+    var worked = results[0];
+    var workedPass = !!(worked.ok && deepEqual(worked.result, tests[0].expected));
+    var hiddenPassed = 0;
+    for (var i = 1; i < results.length; i++){ if (results[i].ok && deepEqual(results[i].result, tests[i].expected)) hiddenPassed++; }
+    var err = null;
+    if (!worked.ok) err = worked.error;
+    if (!err){ for (var k = 1; k < results.length; k++){ if (!results[k].ok){ err = results[k].error; break; } } }
+    return { workedPass: workedPass, hiddenPassed: hiddenPassed, error: err, workedActual: worked.ok ? worked.result : null, runtimeUnavailable: false };
+  }
+
+  /* ================= JavaScript screen (Worker) ================= */
+  function runJSChecks(code){
+    return new Promise(function(resolve){
+      var workerSrc =
+        "var deepEqual = " + deepEqual.toString() + ";\n" +
+        "self.onmessage = function(e){\n" +
+        "  var d = e.data;\n" +
+        "  try {\n" +
+        "    var factory = new Function(d.code + '\\n; return (typeof ' + d.fnName + ' !== \"undefined\") ? ' + d.fnName + ' : null;');\n" +
+        "    var fn = factory();\n" +
+        "    if (typeof fn !== 'function'){ self.postMessage({ok:false, error: d.fnName + ' is not defined as a function.'}); return; }\n" +
+        "    var out = [];\n" +
+        "    for (var i = 0; i < d.tests.length; i++){\n" +
+        "      try { var args = JSON.parse(JSON.stringify(d.tests[i].args)); var r = fn.apply(null, args); out.push({ok:true, result:r, pass: deepEqual(r, d.tests[i].expected)}); }\n" +
+        "      catch(err){ out.push({ok:false, error: String(err && err.message ? err.message : err), pass:false}); }\n" +
+        "    }\n" +
+        "    self.postMessage({ok:true, results: out});\n" +
+        "  } catch(err){ self.postMessage({ok:false, error: String(err && err.message ? err.message : err)}); }\n" +
+        "};\n";
+      var blob = new Blob([workerSrc], {type: "text/javascript"});
+      var url = URL.createObjectURL(blob);
+      var worker = new Worker(url);
+      var done = false;
+      var timer = setTimeout(function(){
+        if (done) return; done = true;
+        try { worker.terminate(); } catch(e){}
+        URL.revokeObjectURL(url);
+        resolve({ workedPass: false, hiddenPassed: 0, error: "Your code took too long to run (over 4 seconds) — it may contain an infinite loop. Hidden checks counted as failed.", workedActual: null, runtimeUnavailable: false });
+      }, 4000);
+      worker.onmessage = function(e){
+        if (done) return; done = true; clearTimeout(timer);
+        try { worker.terminate(); } catch(err){}
+        URL.revokeObjectURL(url);
+        var d = e.data;
+        if (!d.ok){ resolve({ workedPass: false, hiddenPassed: 0, error: d.error, workedActual: null, runtimeUnavailable: false }); return; }
+        var worked = d.results[0];
+        var hiddenPassed = 0;
+        for (var i = 1; i < d.results.length; i++){ if (d.results[i].pass) hiddenPassed++; }
+        var err = null;
+        if (!worked.ok) err = worked.error;
+        if (!err){ for (var k = 1; k < d.results.length; k++){ if (!d.results[k].ok){ err = d.results[k].error; break; } } }
+        resolve({ workedPass: !!worked.pass, hiddenPassed: hiddenPassed, error: err, workedActual: worked.ok ? worked.result : null, runtimeUnavailable: false });
+      };
+      worker.onerror = function(err){
+        if (done) return; done = true; clearTimeout(timer);
+        try { worker.terminate(); } catch(e2){}
+        URL.revokeObjectURL(url);
+        resolve({ workedPass: false, hiddenPassed: 0, error: String(err.message || "Worker error"), workedActual: null, runtimeUnavailable: false });
+      };
+      var tests = state.problem.tests.map(function(t){ return {args: clone(t.args), expected: t.expected}; });
+      worker.postMessage({ code: code, tests: tests, fnName: state.problem.fnName });
+    });
+  }
+
+  /* ================= JavaScript deep — Retry with backoff scenarios =================
+     This function is stringified into the Worker; it must be self-contained
+     (it receives deepEqual as an argument). Verified against the pack model in Node. */
+  function jsDeepScenarios(fn, deepEqualFn){
+    function fakeSleep(delays){ return function(ms){ delays.push(ms); return Promise.resolve(); }; }
+    var out = [];
+    function run(){
+      var delays = [], calls = 0;
+      var op = function(a){ calls++; if (a < 3) return Promise.reject(new Error("boom " + a)); return Promise.resolve("ok"); };
+      return Promise.resolve().then(function(){ return fn(op, {maxAttempts: 5, baseDelayMs: 100, maxDelayMs: 1000, sleep: fakeSleep(delays)}); })
+        .then(function(res){ var actual = {result: res, delays: delays}; out.push({ok: true, result: actual, pass: deepEqualFn(actual, {result: "ok", delays: [100, 200]})}); },
+              function(e){ var actual = {result: null, delays: delays}; out.push({ok: false, error: String(e && e.message ? e.message : e), result: actual, pass: false}); })
+        .then(function(){
+          var delays1 = [];
+          var opFail = function(){ return Promise.reject(new Error("still down")); };
+          return fn(opFail, {maxAttempts: 3, baseDelayMs: 100, maxDelayMs: 150, sleep: fakeSleep(delays1)})
+            .then(function(){ out.push({ok: false, error: "Expected withRetry to throw, but it returned.", pass: false}); },
+                  function(caught){
+                    var actual = {threw: true, attempts: (caught && typeof caught.attempts !== "undefined") ? caught.attempts : null,
+                      causeMsg: (caught && caught.cause) ? (caught.cause.message || String(caught.cause)) : null, delays: delays1};
+                    out.push({ok: true, result: actual, pass: deepEqualFn(actual, {threw: true, attempts: 3, causeMsg: "still down", delays: [100, 150]})});
+                  });
+        })
+        .then(function(){
+          var delays2 = [];
+          var opOk = function(){ return Promise.resolve(42); };
+          return fn(opOk, {maxAttempts: 3, baseDelayMs: 100, sleep: fakeSleep(delays2)})
+            .then(function(res){ var actual = {result: res, delays: delays2}; out.push({ok: true, result: actual, pass: deepEqualFn(actual, {result: 42, delays: []})}); },
+                  function(e){ out.push({ok: false, error: String(e && e.message ? e.message : e), pass: false}); });
+        })
+        .then(function(){
+          var delays3 = [];
+          var opLate = function(a){ if (a < 5) return Promise.reject(new Error("x" + a)); return Promise.resolve("late-ok"); };
+          return fn(opLate, {maxAttempts: 5, baseDelayMs: 50, sleep: fakeSleep(delays3)})
+            .then(function(res){ var actual = {result: res, delays: delays3}; out.push({ok: true, result: actual, pass: deepEqualFn(actual, {result: "late-ok", delays: [50, 100, 200, 400]})}); },
+                  function(e){ out.push({ok: false, error: String(e && e.message ? e.message : e), pass: false}); });
+        })
+        .then(function(){ return out; });
+    }
+    return run();
+  }
+
+  function runJSDeepChecks(code){
+    return new Promise(function(resolve){
+      var workerSrc =
+        "var deepEqual = " + deepEqual.toString() + ";\n" +
+        "var jsDeepScenarios = " + jsDeepScenarios.toString() + ";\n" +
+        "self.onmessage = function(e){\n" +
+        "  var d = e.data;\n" +
+        "  var factory;\n" +
+        "  try { factory = new Function(d.code + '\\n; return (typeof withRetry !== \"undefined\") ? withRetry : null;'); }\n" +
+        "  catch(err){ self.postMessage({ok:false, error: String(err && err.message ? err.message : err)}); return; }\n" +
+        "  var fn;\n" +
+        "  try { fn = factory(); } catch(err){ self.postMessage({ok:false, error: String(err && err.message ? err.message : err)}); return; }\n" +
+        "  if (typeof fn !== 'function'){ self.postMessage({ok:false, error:'withRetry is not defined as a function.'}); return; }\n" +
+        "  jsDeepScenarios(fn, deepEqual).then(function(results){ self.postMessage({ok:true, results: results}); })\n" +
+        "    .catch(function(err){ self.postMessage({ok:false, error: String(err && err.message ? err.message : err)}); });\n" +
+        "};\n";
+      var blob = new Blob([workerSrc], {type: "text/javascript"});
+      var url = URL.createObjectURL(blob);
+      var worker = new Worker(url);
+      var done = false;
+      var timer = setTimeout(function(){
+        if (done) return; done = true;
+        try { worker.terminate(); } catch(e){}
+        URL.revokeObjectURL(url);
+        resolve({ workedPass: false, hiddenPassed: 0, error: "Your code took too long to run (over 6 seconds) — it may be waiting on a real timer instead of the injected sleep, or looping. Hidden checks counted as failed.", workedActual: null, runtimeUnavailable: false });
+      }, 6000);
+      worker.onmessage = function(e){
+        if (done) return; done = true; clearTimeout(timer);
+        try { worker.terminate(); } catch(err){}
+        URL.revokeObjectURL(url);
+        var d = e.data;
+        if (!d.ok){ resolve({ workedPass: false, hiddenPassed: 0, error: d.error, workedActual: null, runtimeUnavailable: false }); return; }
+        var worked = d.results[0];
+        var hiddenPassed = 0;
+        for (var i = 1; i < d.results.length; i++){ if (d.results[i].pass) hiddenPassed++; }
+        var err = null;
+        if (worked && !worked.ok && worked.error) err = worked.error;
+        if (!err){ for (var k = 1; k < d.results.length; k++){ if (!d.results[k].ok && d.results[k].error){ err = d.results[k].error; break; } } }
+        resolve({ workedPass: !!(worked && worked.pass), hiddenPassed: hiddenPassed, error: err, workedActual: worked ? worked.result : null, runtimeUnavailable: false });
+      };
+      worker.onerror = function(err){
+        if (done) return; done = true; clearTimeout(timer);
+        try { worker.terminate(); } catch(e2){}
+        URL.revokeObjectURL(url);
+        resolve({ workedPass: false, hiddenPassed: 0, error: String(err.message || "Worker error"), workedActual: null, runtimeUnavailable: false });
+      };
+      worker.postMessage({ code: code });
+    });
+  }
+
+  /* ================= Compiled languages — Piston + Judge0 ================= */
+  var PISTON_CONF = {
+    cpp:    { language: "c++", version: "10.2.0" },
+    csharp: { language: "csharp.net", version: "5.0.201" },
+    java:   { language: "java", version: "15.0.2" }
+  };
+  var JUDGE0_CONF = { cpp: 54, csharp: 51, java: 91 };
+  var CS_FILE_HEADER = "using System;\nusing System.Collections.Generic;\n\n";
+
+  function javaCombine(candidate, mainSrc){
+    var imports = [];
+    function stripImports(code){
+      var kept = [];
+      code.split("\n").forEach(function(line){
+        var t = line.trim();
+        if (t.indexOf("import ") === 0 && t.charAt(t.length - 1) === ";"){ if (imports.indexOf(t) === -1) imports.push(t); }
+        else kept.push(line);
+      });
+      return kept.join("\n");
+    }
+    var bodyC = candidate.replace(/\bpublic\s+(?=(?:final\s+|sealed\s+)?(?:class|record|interface|enum)\b)/g, "");
+    bodyC = stripImports(bodyC);
+    var bodyM = stripImports(mainSrc);
+    return imports.join("\n") + "\n" + bodyC + "\n" + bodyM;
+  }
+
+  function buildCompiledPayloads(code){
+    var p = state.problem, lang = state.lang;
+    if (lang === "cpp"){
+      var single = code + "\n" + p.driver;
+      return {
+        pistonFiles: [{ name: "main.cpp", content: single }],
+        judgeSource: single
+      };
+    }
+    if (lang === "csharp"){
+      var programFile = CS_FILE_HEADER + CS_DRIVER_BODY + "\n" + p.driver;
+      return {
+        pistonFiles: [{ name: p.candidateFile, content: code }, { name: "Program.cs", content: programFile }],
+        judgeSource: code + "\n" + CS_DRIVER_BODY + "\n" + p.driver
+      };
+    }
+    // java
+    return {
+      pistonFiles: [{ name: p.candidateFile, content: code }, { name: "Main.java", content: p.driver }],
+      judgeSource: javaCombine(code, p.driver)
+    };
+  }
+
+  function fetchWithTimeout(url, options, ms){
+    return new Promise(function(resolve, reject){
+      var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+      var t = setTimeout(function(){ if (ctrl) { try { ctrl.abort(); } catch(e){} } reject(new Error("Request timed out")); }, ms);
+      var opts = options || {};
+      if (ctrl) opts.signal = ctrl.signal;
+      fetch(url, opts).then(function(r){ clearTimeout(t); resolve(r); }, function(e){ clearTimeout(t); reject(e); });
+    });
+  }
+  function b64encode(str){
+    var bytes = new TextEncoder().encode(str);
+    var bin = "";
+    bytes.forEach(function(b){ bin += String.fromCharCode(b); });
+    return btoa(bin);
+  }
+  function b64decode(b64){
+    if (!b64) return "";
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  function tryPiston(code){
+    var conf = PISTON_CONF[state.lang];
+    var payloads = buildCompiledPayloads(code);
+    return fetchWithTimeout("https://emkc.org/api/v2/piston/execute", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language: conf.language, version: conf.version, files: payloads.pistonFiles })
+    }, 30000).then(function(r){
+      if (!r.ok) return null;
+      return r.json();
+    }).then(function(data){
+      if (!data || !data.run) return null; // e.g. whitelist-only message — provider unavailable
+      var compileOut = (data.compile && (data.compile.output || data.compile.stderr)) || "";
+      var compileFailed = !!(data.compile && typeof data.compile.code === "number" && data.compile.code !== 0);
+      return { stdout: data.run.stdout || "", stderr: data.run.stderr || "", compileOut: compileFailed ? compileOut : "", provider: "Piston" };
+    }).catch(function(){ return null; });
+  }
+
+  function tryJudge0(code){
+    var payloads = buildCompiledPayloads(code);
+    return fetchWithTimeout("https://ce.judge0.com/submissions?base64_encoded=true&wait=true", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source_code: b64encode(payloads.judgeSource), language_id: JUDGE0_CONF[state.lang] })
+    }, 45000).then(function(r){
+      if (!r.ok) return null;
+      return r.json();
+    }).then(function(data){
+      if (!data || !data.status) return null;
+      var compileOut = b64decode(data.compile_output);
+      var isCompileErr = data.status.id === 6;
+      return { stdout: b64decode(data.stdout), stderr: b64decode(data.stderr), compileOut: isCompileErr ? compileOut : "", provider: "Judge0" };
+    }).catch(function(){ return null; });
+  }
+
+  function parseCompiledOutput(raw){
+    var stdout = raw.stdout || "";
+    var checks = {};
+    var workedOut = null;
+    stdout.split("\n").forEach(function(line){
+      var m = line.match(/^CHECK\s+(worked|hidden1|hidden2|hidden3)\s+(PASS|FAIL)\s*$/);
+      if (m) checks[m[1]] = (m[2] === "PASS");
+      var w = line.match(/^WORKED_OUT\s+(.*)$/);
+      if (w) workedOut = w[1];
+    });
+    var ids = ["worked", "hidden1", "hidden2", "hidden3"];
+    var anyToken = ids.some(function(id){ return Object.prototype.hasOwnProperty.call(checks, id); });
+    if (!anyToken){
+      var msg = "";
+      if (raw.compileOut) msg = "Compilation failed:\n" + truncate(raw.compileOut, 1500);
+      else if (raw.stderr) msg = "The run failed:\n" + truncate(raw.stderr, 1500);
+      else if (stdout) msg = "The run produced output but no check results:\n" + truncate(stdout, 800);
+      else msg = "The run produced no output.";
+      return { workedPass: false, hiddenPassed: null, notRun: true, error: msg, workedActual: null, runtimeUnavailable: false };
+    }
+    var hiddenPassed = 0;
+    ["hidden1", "hidden2", "hidden3"].forEach(function(id){ if (checks[id]) hiddenPassed++; });
+    var err = null;
+    if (raw.stderr && (!checks.worked || ["hidden1","hidden2","hidden3"].some(function(id){ return !Object.prototype.hasOwnProperty.call(checks, id); }))){
+      err = truncate(raw.stderr, 800);
+    }
+    return { workedPass: !!checks.worked, hiddenPassed: hiddenPassed, error: err, workedActual: workedOut, runtimeUnavailable: false };
+  }
+
+  function runCompiledChecks(code){
+    var order = (state.lang === "java") ? [tryJudge0, tryPiston] : [tryPiston, tryJudge0];
+    return order[0](code).then(function(raw){
+      if (raw) return parseCompiledOutput(raw);
+      return order[1](code).then(function(raw2){
+        if (raw2) return parseCompiledOutput(raw2);
+        return { workedPass: false, hiddenPassed: null, error: null, workedActual: null, runtimeUnavailable: true };
+      });
+    });
+  }
+
+  /* ================= Check result display ================= */
+  function expectedDisplay(){
+    var p = state.problem;
+    if (p.kind === "compiled") return p.workedOutExpected;
+    if (p.kind === "jsdeep") return p.workedExpected;
+    return p.tests[0].expected;
+  }
+  function showCheckResult(res){
+    var box = el("checkBox"), title = el("checkTitle"), detail = el("checkDetail"), pre = el("checkPre");
+    box.classList.add("show");
+    box.classList.remove("pass","fail");
+    if (res.runtimeUnavailable){
+      title.textContent = "Checks not run";
+      detail.textContent = state.problem.kind === "compiled"
+        ? "The code-execution service is unavailable, so checks could not run. You can still finish — your results will be marked as not executed and your code will be reviewed manually."
+        : "The Python runtime is unavailable, so checks could not run. You can still finish — your results will be marked accordingly and your code reviewed manually.";
+      pre.classList.add("hidden");
+      return;
+    }
+    if (res.notRun){
+      box.classList.add("fail");
+      title.textContent = "Worked example: FAIL — your code did not compile or run";
+      detail.textContent = "Hidden checks: not run. Fix the error below and run the checks again.";
+      pre.classList.remove("hidden");
+      pre.textContent = res.error || "";
+      return;
+    }
+    if (res.workedPass){
+      box.classList.add("pass");
+      title.textContent = "Worked example: PASS";
+      detail.textContent = "Hidden checks: " + res.hiddenPassed + " of 3 passed. (Hidden inputs are not shown.)";
+      pre.classList.add("hidden");
+    } else {
+      box.classList.add("fail");
+      title.textContent = "Worked example: FAIL";
+      var msg = "Hidden checks: " + res.hiddenPassed + " of 3 passed. (Hidden inputs are not shown.)";
+      if (res.error) msg += " Error: " + res.error;
+      detail.textContent = msg;
+      if (res.workedActual !== null && res.workedActual !== undefined){
+        pre.classList.remove("hidden");
+        if (typeof res.workedActual === "string"){
+          pre.textContent = "Your code's worked-example output:\n" + res.workedActual + "\n\nExpected:\n" + expectedDisplay();
+        } else {
+          pre.textContent = "Your function returned:\n" + JSON.stringify(res.workedActual, null, 2) + "\n\nExpected:\n" + JSON.stringify(expectedDisplay(), null, 2);
+        }
+      } else { pre.classList.add("hidden"); }
+    }
+  }
+
+  function executeChecks(){
+    var code = editor.value;
+    var kind = state.problem.kind;
+    if (kind === "python"){
+      if (pyodideState !== "ready"){
+        return Promise.resolve({ workedPass: false, hiddenPassed: null, error: null, workedActual: null, runtimeUnavailable: true });
+      }
+      try { return Promise.resolve(runPythonChecks(code)); }
+      catch(e){ return Promise.resolve({ workedPass: false, hiddenPassed: 0, error: String(e && e.message ? e.message : e), workedActual: null, runtimeUnavailable: false }); }
+    }
+    if (kind === "js") return runJSChecks(code);
+    if (kind === "jsdeep") return runJSDeepChecks(code);
+    if (kind === "compiled") return runCompiledChecks(code);
+    return Promise.resolve(null);
+  }
+
+  /* ================= Start ================= */
+  function currentTierSeconds(){
+    var t = document.querySelector('input[name="tier"]:checked');
+    return TIERS[t ? t.value : "screen"].seconds;
+  }
+  document.querySelectorAll('input[name="tier"]').forEach(function(r){
+    r.addEventListener("change", function(){ el("startBtn").textContent = "Start assessment — " + fmtTime(currentTierSeconds()); });
+  });
+
+  startForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    var name = el("candName").value.trim();
+    var email = el("candEmail").value.trim();
+    var langEl = document.querySelector('input[name="lang"]:checked');
+    var tierEl = document.querySelector('input[name="tier"]:checked');
+    var lang = langEl ? langEl.value : "python";
+    var tier = tierEl ? tierEl.value : "screen";
+    if (!name){ el("startError").textContent = "Please enter your full name to start."; el("candName").focus(); return; }
+    el("startError").textContent = "";
+    state.name = name; state.email = email; state.lang = lang; state.tier = tier;
+    state.problem = PROBLEMS[lang][tier];
+    state.totalSeconds = TIERS[tier].seconds;
+    state.startedAt = new Date(); state.remaining = state.totalSeconds; state.finished = false; state.expired = false; state.lastCheck = null; state.autoSendAttempted = false;
+    resetAntiCheat();
+
+    el("problemTitle").textContent = state.problem.title + " — " + PROBLEMS[lang].label + " · " + TIERS[tier].label;
+    el("problemBody").innerHTML = state.problem.body;
+    el("assessMeta").innerHTML = "Candidate: <strong></strong> &nbsp;·&nbsp; Language: <strong></strong> &nbsp;·&nbsp; Tier: <strong></strong>";
+    var strongs = el("assessMeta").querySelectorAll("strong");
+    strongs[0].textContent = name;
+    strongs[1].textContent = PROBLEMS[lang].label;
+    strongs[2].textContent = TIERS[tier].label + " (" + TIERS[tier].lengthLabel + ")";
+    el("editorFileName").textContent = state.problem.fileName;
+    el("editorHint").textContent = state.problem.hint;
+    editor.value = state.problem.starter;
+    editor.readOnly = false;
+    el("checkBox").classList.remove("show","pass","fail");
+    el("runStatus").textContent = "";
+    el("runBtn").classList.remove("hidden");
+    el("runBtn").disabled = false;
+    el("runBtn").textContent = "Run checks";
+    el("finishHint").textContent = state.problem.kind === "compiled"
+      ? "Finishing runs the checks one final time on the code as it stands. Compiling and running can take several seconds."
+      : "Finishing runs the checks one final time on the code as it stands.";
+    viewStart.classList.add("hidden");
+    viewResults.classList.add("hidden");
+    viewAssess.classList.remove("hidden");
+    el("headerTimer").classList.remove("hidden");
+    updateTimerUI();
+    if (state.timerId) clearInterval(state.timerId);
+    state.timerId = setInterval(tick, 1000);
+    if (lang === "python") loadPython(); else setRuntimeUI();
+    window.scrollTo(0,0);
+    editor.focus();
+  });
+
+  /* ================= Run checks ================= */
+  el("runBtn").addEventListener("click", function(){
+    if (state.finished) return;
+    var runBtn = el("runBtn");
+    el("runStatus").textContent = state.problem.kind === "compiled" ? "Running checks — compiling and running your code (this can take several seconds)…" : "Running checks…";
+    runBtn.disabled = true;
+    executeChecks().then(function(res){
+      runBtn.disabled = false;
+      if (state.lang === "python") setRuntimeUI();
+      state.lastCheck = res;
+      el("runStatus").textContent = "";
+      if (res) showCheckResult(res);
+    });
+  });
+
+  /* ================= Automatic result delivery (Web3Forms) =================
+     Runs exactly once per results generation, guarded by
+     state.autoSendAttempted. Field order matters: the summary fields
+     come first and the candidate's full code goes last, so if
+     Web3Forms ever truncates a very long value, the summary still
+     arrives intact. Status text is only ever "sent" after a
+     confirmed success response. */
+  function autoSendResults(res, elapsed, expired){
+    if (state.autoSendAttempted) return;
+    state.autoSendAttempted = true;
+    var statusEl = el("deliveryStatus");
+    function setStatus(text, cls){
+      statusEl.textContent = text;
+      statusEl.className = "delivery-status " + cls;
+    }
+    if (!WEB3FORMS_ACCESS_KEY){
+      setStatus("Automatic sending isn't configured yet — please send your results with the buttons below.", "pending");
+      return;
+    }
+    var workedResult, hiddenResult;
+    if (res && res.runtimeUnavailable){
+      workedResult = "Not executed — execution service unavailable, submitted for manual review";
+      hiddenResult = "Not executed — submitted for manual review";
+    } else if (res && res.notRun){
+      workedResult = "FAIL — code did not compile or run";
+      hiddenResult = "Not run";
+    } else if (res){
+      workedResult = res.workedPass ? "PASS" : "FAIL";
+      hiddenResult = res.hiddenPassed + "/3 passed";
+    } else {
+      workedResult = "Not run";
+      hiddenResult = "0/3 passed";
+    }
+    var payload = {
+      access_key: WEB3FORMS_ACCESS_KEY,
+      subject: "Coding assessment result — " + state.name + " — " + PROBLEMS[state.lang].label + " (" + TIERS[state.tier].label + ")",
+      from_name: "Coding Assessment (candidate: " + state.name + ")",
+      candidate_name: state.name,
+      language: PROBLEMS[state.lang].label,
+      tier: TIERS[state.tier].label + " (" + TIERS[state.tier].lengthLabel + ")",
+      problem: state.problem.title,
+      date_time: new Date().toLocaleString(),
+      time_used: fmtTime(elapsed) + " of " + fmtTime(state.totalSeconds),
+      timer_expired: expired ? "Yes" : "No",
+      worked_example: workedResult,
+      hidden_checks: hiddenResult,
+      window_departures: state.departures.length,
+      window_departure_times: departureTimesText(),
+      paste_attempts_blocked: state.pasteAttempts,
+      problem_copy_attempts_blocked: state.problemCopyAttempts
+    };
+    if (state.email) payload.candidate_email = state.email;
+    if (res && res.notRun && res.error) payload.error = truncate(res.error, 1500);
+    else if (res && res.error && !res.workedPass) payload.error = res.error;
+    if (res && typeof res.workedActual === "string") payload.worked_example_output = res.workedActual;
+    payload.code = editor.value; // full submitted code — always last
+    setStatus("Sending results to your recruiter…", "pending");
+    fetchWithTimeout(WEB3FORMS_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    }, 15000).then(function(r){
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json().catch(function(){ return {}; });
+    }).then(function(data){
+      if (data && data.success === false) throw new Error("Web3Forms reported failure");
+      setStatus("Results sent to " + RECRUITER_EMAIL + " ✓", "sent");
+    }).catch(function(){
+      setStatus("Automatic sending failed — please use Copy results or Email results below.", "failed");
+    });
+  }
+
+  /* ================= Finish & results ================= */
+  function buildPlainText(res, elapsed, expired){
+    var p = state.problem;
+    var lines = [];
+    lines.push("H10 Capital — Coding Assessment Result");
+    lines.push("======================================");
+    lines.push("Candidate: " + state.name);
+    if (state.email) lines.push("Email: " + state.email);
+    lines.push("Language: " + PROBLEMS[state.lang].label);
+    lines.push("Tier: " + TIERS[state.tier].label + " (" + TIERS[state.tier].lengthLabel + ")");
+    lines.push("Problem: " + p.title);
+    lines.push("Date: " + new Date().toLocaleString());
+    lines.push("Time used: " + fmtTime(elapsed));
+    lines.push("Timer expired: " + (expired ? "Yes — time expired" : "No"));
+    lines.push("Window departures: " + departureSummaryText());
+    lines.push("Paste attempts blocked: " + state.pasteAttempts);
+    lines.push("Problem copy attempts blocked: " + state.problemCopyAttempts);
+    if (res && res.runtimeUnavailable){
+      lines.push("Worked example: Not executed — execution service unavailable, submitted for manual review");
+      lines.push("Hidden checks: Not executed — submitted for manual review");
+    } else if (res && res.notRun){
+      lines.push("Worked example: FAIL — code did not compile or run");
+      lines.push("Error: " + (res.error || ""));
+      lines.push("Hidden checks: Not run");
+    } else if (res){
+      lines.push("Worked example: " + (res.workedPass ? "PASS" : "FAIL"));
+      if (typeof res.workedActual === "string") lines.push("Worked-example output: " + res.workedActual);
+      if (res.error && !res.workedPass) lines.push("Error: " + res.error);
+      lines.push("Hidden checks passed: " + res.hiddenPassed + "/3");
+    } else {
+      lines.push("Worked example: Not run");
+      lines.push("Hidden checks passed: 0/3");
+    }
+    lines.push("");
+    lines.push("Submitted code:");
+    lines.push("------------------------------");
+    lines.push(editor.value);
+    return lines.join("\n");
+  }
+
+  var plainTextCache = "";
+
+  function finishAssessment(fromTimer){
+    if (state.finished) return;
+    var doFinish = function(res){
+      state.finished = true;
+      if (state.timerId){ clearInterval(state.timerId); state.timerId = null; }
+      editor.readOnly = true;
+      var elapsed = state.totalSeconds - state.remaining;
+      if (fromTimer) elapsed = state.totalSeconds;
+      var p = state.problem;
+      var rows = "";
+      function row(k, v){ return "<tr><th>" + k + "</th><td>" + v + "</td></tr>"; }
+      function esc(s){ var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+      rows += row("Candidate", esc(state.name) + (state.email ? " &lt;" + esc(state.email) + "&gt;" : ""));
+      rows += row("Language", esc(PROBLEMS[state.lang].label));
+      rows += row("Tier", esc(TIERS[state.tier].label) + " (" + TIERS[state.tier].lengthLabel + ")");
+      rows += row("Problem", esc(p.title));
+      rows += row("Date / time", esc(new Date().toLocaleString()));
+      rows += row("Time used", fmtTime(elapsed) + " of " + fmtTime(state.totalSeconds));
+      rows += row("Timer expired", state.expired ? '<span class="badge warn">Yes — time expired</span>' : '<span class="badge neutral">No</span>');
+      rows += row("Test integrity", "Window departures: " + esc(departureSummaryText()) + "<br>Paste attempts blocked: " + state.pasteAttempts + "<br>Problem copy attempts blocked: " + state.problemCopyAttempts);
+      if (res && res.runtimeUnavailable){
+        rows += row("Worked example", '<span class="badge neutral">Not executed — execution service unavailable, submitted for manual review</span>');
+        rows += row("Additional checks", '<span class="badge neutral">Not executed — submitted for manual review</span>');
+      } else if (res && res.notRun){
+        rows += row("Worked example", '<span class="badge fail">FAIL — code did not compile or run</span>' + (res.error ? '<div class="small" style="margin-top:6px; white-space:pre-wrap">' + esc(truncate(res.error, 800)) + "</div>" : ""));
+        rows += row("Hidden checks passed", '<span class="badge warn">Not run</span>');
+      } else if (res){
+        rows += row("Worked example", res.workedPass ? '<span class="badge pass">PASS</span>' : '<span class="badge fail">FAIL</span>' + (res.error ? '<div class="small" style="margin-top:6px">Error: ' + esc(res.error) + "</div>" : ""));
+        if (typeof res.workedActual === "string") rows += row("Worked-example output", esc(res.workedActual));
+        rows += row("Hidden checks passed", "<strong>" + res.hiddenPassed + " / 3</strong>");
+      }
+      el("summaryBody").innerHTML = rows;
+      el("submittedCode").textContent = editor.value;
+      plainTextCache = buildPlainText(res, elapsed, state.expired);
+      var subject = "Coding assessment result — " + state.name + " — " + PROBLEMS[state.lang].label + " (" + TIERS[state.tier].label + ")";
+      el("emailBtn").href = "mailto:tuan@h10capital.com?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(plainTextCache);
+      el("copyStatus").textContent = "";
+      viewAssess.classList.add("hidden");
+      el("headerTimer").classList.add("hidden");
+      viewResults.classList.remove("hidden");
+      window.scrollTo(0,0);
+      autoSendResults(res, elapsed, state.expired);
+    };
+
+    el("runStatus").textContent = state.problem.kind === "compiled" ? "Running final checks — compiling and running your code…" : "Running final checks…";
+    executeChecks().then(function(res){ state.lastCheck = res; doFinish(res); });
+  }
+
+  el("finishBtn").addEventListener("click", function(){ finishAssessment(false); });
+
+  /* ================= Copy ================= */
+  el("copyBtn").addEventListener("click", function(){
+    var status = el("copyStatus");
+    function done(ok){ status.textContent = ok ? "Copied — now paste it into a reply to your recruiter." : "Copy failed — select the summary and code above and copy manually."; }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(plainTextCache).then(function(){ done(true); }, function(){ fallback(); });
+    } else fallback();
+    function fallback(){
+      var ta = document.createElement("textarea");
+      ta.value = plainTextCache; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch(e){ ok = false; }
+      document.body.removeChild(ta);
+      done(ok);
+    }
+  });
+})();
+</script>
+</body>
+</html>
