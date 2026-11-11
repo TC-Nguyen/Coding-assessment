@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Coding Assessment v3: failure reasons, text counters, stack ranking -->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -317,6 +318,18 @@
   const WEB3FORMS_ACCESS_KEY = "85abafbb-ea5c-4d2f-abad-c8ab4eb7b6e8";
   var WEB3FORMS_ENDPOINT = "https://api.web3forms.com/submit";
   var RECRUITER_EMAIL = "tuan@h10capital.com";
+
+  /* ============================================================
+     STACK RANKING — Apps Script web app endpoint.
+     RANKING_ENDPOINT is patched in after the ranking endpoint is
+     deployed; while it is empty, results are sent with no rank.
+     Ranking semantics: the cohort is every recorded result with
+     the same tier + same problem; ordering is total checks passed
+     (worked example = 1, plus hidden checks 0–3) descending, then
+     time used ascending, then earliest submission first.
+     ============================================================ */
+  var RANKING_ENDPOINT = "https://script.google.com/macros/s/AKfycbzdjVJYXvZb73DsnfQmH_0pvd58yuBSU8f2WbIgq1zgLP1EegkANhsXfXFojITKbxs2jA/exec";
+  var RANKING_TOKEN = "h10-rank-v1";
 
   var TIERS = {
     screen: { key: "screen", label: "Screen", seconds: 15 * 60, lengthLabel: "15 minutes" },
@@ -1140,6 +1153,11 @@
     return true;
   }
   function clone(v){ return JSON.parse(JSON.stringify(v)); }
+  function fmtVal(v){
+    if (v === null || v === undefined) return null;
+    if (typeof v === "string") return v;
+    try { return JSON.stringify(v); } catch(e){ return String(v); }
+  }
   function truncate(s, n){ s = String(s || ""); return s.length > n ? s.slice(0, n) + "\n… (truncated)" : s; }
 
   editor.addEventListener("keydown", function(e){
@@ -1257,6 +1275,9 @@
   function departureTimesText(){
     return state.departures.length ? state.departures.join(", ") : "None";
   }
+  /* Counters are sent to Web3Forms as text: its emails render a
+     bare numeric 0 as a blank field, so 0 becomes "0 (none)". */
+  function countText(n){ return n === 0 ? "0 (none)" : String(n); }
 
   /* ================= Timer ================= */
   function updateTimerUI(){
@@ -1320,7 +1341,13 @@
     var err = null;
     if (!worked.ok) err = worked.error;
     if (!err){ for (var k = 1; k < results.length; k++){ if (!results[k].ok){ err = results[k].error; break; } } }
-    return { workedPass: workedPass, hiddenPassed: hiddenPassed, error: err, workedActual: worked.ok ? worked.result : null, runtimeUnavailable: false };
+    var details = results.map(function(r, i){
+      var label = i === 0 ? "Worked example" : "Hidden check " + i;
+      var id = i === 0 ? "worked" : "hidden" + i;
+      if (!r.ok) return { id: id, label: label, status: "error", expected: tests[i].expected, actual: null, error: r.error || null };
+      return { id: id, label: label, status: deepEqual(r.result, tests[i].expected) ? "pass" : "fail", expected: tests[i].expected, actual: (typeof r.result !== "undefined" ? r.result : null), error: null };
+    });
+    return { workedPass: workedPass, hiddenPassed: hiddenPassed, error: err, workedActual: worked.ok ? worked.result : null, runtimeUnavailable: false, details: details };
   }
 
   /* ================= JavaScript screen (Worker) ================= */
@@ -1364,7 +1391,13 @@
         var err = null;
         if (!worked.ok) err = worked.error;
         if (!err){ for (var k = 1; k < d.results.length; k++){ if (!d.results[k].ok){ err = d.results[k].error; break; } } }
-        resolve({ workedPass: !!worked.pass, hiddenPassed: hiddenPassed, error: err, workedActual: worked.ok ? worked.result : null, runtimeUnavailable: false });
+        var details = d.results.map(function(r, i){
+          var label = i === 0 ? "Worked example" : "Hidden check " + i;
+          var id = i === 0 ? "worked" : "hidden" + i;
+          if (!r.ok) return { id: id, label: label, status: "error", expected: tests[i].expected, actual: null, error: r.error || null };
+          return { id: id, label: label, status: r.pass ? "pass" : "fail", expected: tests[i].expected, actual: (typeof r.result !== "undefined" ? r.result : null), error: null };
+        });
+        resolve({ workedPass: !!worked.pass, hiddenPassed: hiddenPassed, error: err, workedActual: worked.ok ? worked.result : null, runtimeUnavailable: false, details: details });
       };
       worker.onerror = function(err){
         if (done) return; done = true; clearTimeout(timer);
@@ -1387,32 +1420,32 @@
       var delays = [], calls = 0;
       var op = function(a){ calls++; if (a < 3) return Promise.reject(new Error("boom " + a)); return Promise.resolve("ok"); };
       return Promise.resolve().then(function(){ return fn(op, {maxAttempts: 5, baseDelayMs: 100, maxDelayMs: 1000, sleep: fakeSleep(delays)}); })
-        .then(function(res){ var actual = {result: res, delays: delays}; out.push({ok: true, result: actual, pass: deepEqualFn(actual, {result: "ok", delays: [100, 200]})}); },
-              function(e){ var actual = {result: null, delays: delays}; out.push({ok: false, error: String(e && e.message ? e.message : e), result: actual, pass: false}); })
+        .then(function(res){ var actual = {result: res, delays: delays}; out.push({ok: true, result: actual, pass: deepEqualFn(actual, {result: "ok", delays: [100, 200]}), expected: {result: "ok", delays: [100, 200]}}); },
+              function(e){ var actual = {result: null, delays: delays}; out.push({ok: false, error: String(e && e.message ? e.message : e), result: actual, pass: false, expected: {result: "ok", delays: [100, 200]}}); })
         .then(function(){
           var delays1 = [];
           var opFail = function(){ return Promise.reject(new Error("still down")); };
           return fn(opFail, {maxAttempts: 3, baseDelayMs: 100, maxDelayMs: 150, sleep: fakeSleep(delays1)})
-            .then(function(){ out.push({ok: false, error: "Expected withRetry to throw, but it returned.", pass: false}); },
+            .then(function(){ out.push({ok: false, error: "Expected withRetry to throw, but it returned.", pass: false, expected: {threw: true, attempts: 3, causeMsg: "still down", delays: [100, 150]}}); },
                   function(caught){
                     var actual = {threw: true, attempts: (caught && typeof caught.attempts !== "undefined") ? caught.attempts : null,
                       causeMsg: (caught && caught.cause) ? (caught.cause.message || String(caught.cause)) : null, delays: delays1};
-                    out.push({ok: true, result: actual, pass: deepEqualFn(actual, {threw: true, attempts: 3, causeMsg: "still down", delays: [100, 150]})});
+                    out.push({ok: true, result: actual, pass: deepEqualFn(actual, {threw: true, attempts: 3, causeMsg: "still down", delays: [100, 150]}), expected: {threw: true, attempts: 3, causeMsg: "still down", delays: [100, 150]}});
                   });
         })
         .then(function(){
           var delays2 = [];
           var opOk = function(){ return Promise.resolve(42); };
           return fn(opOk, {maxAttempts: 3, baseDelayMs: 100, sleep: fakeSleep(delays2)})
-            .then(function(res){ var actual = {result: res, delays: delays2}; out.push({ok: true, result: actual, pass: deepEqualFn(actual, {result: 42, delays: []})}); },
-                  function(e){ out.push({ok: false, error: String(e && e.message ? e.message : e), pass: false}); });
+            .then(function(res){ var actual = {result: res, delays: delays2}; out.push({ok: true, result: actual, pass: deepEqualFn(actual, {result: 42, delays: []}), expected: {result: 42, delays: []}}); },
+                  function(e){ out.push({ok: false, error: String(e && e.message ? e.message : e), pass: false, expected: {result: 42, delays: []}}); });
         })
         .then(function(){
           var delays3 = [];
           var opLate = function(a){ if (a < 5) return Promise.reject(new Error("x" + a)); return Promise.resolve("late-ok"); };
           return fn(opLate, {maxAttempts: 5, baseDelayMs: 50, sleep: fakeSleep(delays3)})
-            .then(function(res){ var actual = {result: res, delays: delays3}; out.push({ok: true, result: actual, pass: deepEqualFn(actual, {result: "late-ok", delays: [50, 100, 200, 400]})}); },
-                  function(e){ out.push({ok: false, error: String(e && e.message ? e.message : e), pass: false}); });
+            .then(function(res){ var actual = {result: res, delays: delays3}; out.push({ok: true, result: actual, pass: deepEqualFn(actual, {result: "late-ok", delays: [50, 100, 200, 400]}), expected: {result: "late-ok", delays: [50, 100, 200, 400]}}); },
+                  function(e){ out.push({ok: false, error: String(e && e.message ? e.message : e), pass: false, expected: {result: "late-ok", delays: [50, 100, 200, 400]}}); });
         })
         .then(function(){ return out; });
     }
@@ -1457,7 +1490,13 @@
         var err = null;
         if (worked && !worked.ok && worked.error) err = worked.error;
         if (!err){ for (var k = 1; k < d.results.length; k++){ if (!d.results[k].ok && d.results[k].error){ err = d.results[k].error; break; } } }
-        resolve({ workedPass: !!(worked && worked.pass), hiddenPassed: hiddenPassed, error: err, workedActual: worked ? worked.result : null, runtimeUnavailable: false });
+        var details = d.results.map(function(r, i){
+          var label = i === 0 ? "Worked example" : "Hidden check " + i;
+          var id = i === 0 ? "worked" : "hidden" + i;
+          var status = r.pass ? "pass" : (r.ok ? "fail" : "error");
+          return { id: id, label: label, status: status, expected: (typeof r.expected !== "undefined" ? r.expected : null), actual: (typeof r.result !== "undefined" ? r.result : null), error: r.error || null };
+        });
+        resolve({ workedPass: !!(worked && worked.pass), hiddenPassed: hiddenPassed, error: err, workedActual: worked ? worked.result : null, runtimeUnavailable: false, details: details });
       };
       worker.onerror = function(err){
         if (done) return; done = true; clearTimeout(timer);
@@ -1602,7 +1641,22 @@
     if (raw.stderr && (!checks.worked || ["hidden1","hidden2","hidden3"].some(function(id){ return !Object.prototype.hasOwnProperty.call(checks, id); }))){
       err = truncate(raw.stderr, 800);
     }
-    return { workedPass: !!checks.worked, hiddenPassed: hiddenPassed, error: err, workedActual: workedOut, runtimeUnavailable: false };
+    /* The compiled drivers report only PASS/FAIL per check plus the
+       worked example's output line, so hidden checks have no
+       separable expected/actual values — status and the worked
+       example's expected/actual are what can be reported. */
+    var details = [
+      { id: "worked", label: "Worked example", status: checks.worked ? "pass" : "fail",
+        expected: state.problem.workedOutExpected, actual: workedOut, error: null }
+    ];
+    ["hidden1", "hidden2", "hidden3"].forEach(function(id, idx){
+      var present = Object.prototype.hasOwnProperty.call(checks, id);
+      details.push({ id: id, label: "Hidden check " + (idx + 1),
+        status: present ? (checks[id] ? "pass" : "fail") : "error",
+        expected: null, actual: null,
+        error: present ? null : "No result was reported for this check — the run may have stopped partway." });
+    });
+    return { workedPass: !!checks.worked, hiddenPassed: hiddenPassed, error: err, workedActual: workedOut, runtimeUnavailable: false, details: details };
   }
 
   function runCompiledChecks(code){
@@ -1622,6 +1676,45 @@
     if (p.kind === "compiled") return p.workedOutExpected;
     if (p.kind === "jsdeep") return p.workedExpected;
     return p.tests[0].expected;
+  }
+
+  /* Plain-English explanation of a result, built from the per-check
+     detail (status / expected / actual / error) the runners capture.
+     Used for the recruiter email's failure_reasons field and for the
+     "Why it failed:" section of the plain-text result. Per-check
+     detail is only ever surfaced after the assessment is finished —
+     hidden checks stay hidden while the test is running. */
+  function buildFailureReasons(res){
+    if (!res) return "Checks were not run.";
+    if (res.runtimeUnavailable) return "Checks were not executed — the execution service was unavailable, so this result was submitted for manual review.";
+    if (res.notRun) return "Code did not compile or run: " + truncate(res.error || "unknown error", 1500);
+    var lines = [];
+    if (res.details && res.details.length){
+      res.details.forEach(function(d){
+        if (d.status === "pass") return;
+        if (d.status === "error"){
+          lines.push(d.label + " ERROR: " + truncate(d.error || "unknown error", 300));
+        } else if (d.status === "not run"){
+          lines.push(d.label + " NOT RUN.");
+        } else {
+          var exp = fmtVal(d.expected), act = fmtVal(d.actual);
+          if (exp !== null && act !== null) lines.push(d.label + " FAILED: expected " + truncate(exp, 300) + ", candidate produced " + truncate(act, 300) + ".");
+          else if (exp !== null) lines.push(d.label + " FAILED: expected " + truncate(exp, 300) + ".");
+          else if (act !== null) lines.push(d.label + " FAILED: candidate produced " + truncate(act, 300) + ".");
+          else lines.push(d.label + " FAILED.");
+          if (d.error) lines.push(d.label + " also reported an error: " + truncate(d.error, 300));
+        }
+      });
+    } else {
+      if (!res.workedPass){
+        lines.push(res.error ? ("Worked example FAILED: " + truncate(res.error, 300)) : "Worked example FAILED.");
+      }
+      if (typeof res.hiddenPassed === "number" && res.hiddenPassed < 3){
+        lines.push("Hidden checks: " + res.hiddenPassed + " of 3 passed — " + (3 - res.hiddenPassed) + " failed (per-check detail unavailable for this run).");
+      }
+    }
+    if (!lines.length) return "All checks passed.";
+    return lines.join("\n");
   }
   function showCheckResult(res){
     var box = el("checkBox"), title = el("checkTitle"), detail = el("checkDetail"), pre = el("checkPre");
@@ -1798,29 +1891,85 @@
       timer_expired: expired ? "Yes" : "No",
       worked_example: workedResult,
       hidden_checks: hiddenResult,
-      window_departures: state.departures.length,
+      window_departures: countText(state.departures.length),
       window_departure_times: departureTimesText(),
-      paste_attempts_blocked: state.pasteAttempts,
-      problem_copy_attempts_blocked: state.problemCopyAttempts
+      paste_attempts_blocked: countText(state.pasteAttempts),
+      problem_copy_attempts_blocked: countText(state.problemCopyAttempts)
     };
     if (state.email) payload.candidate_email = state.email;
     if (res && res.notRun && res.error) payload.error = truncate(res.error, 1500);
     else if (res && res.error && !res.workedPass) payload.error = res.error;
     if (res && typeof res.workedActual === "string") payload.worked_example_output = res.workedActual;
-    payload.code = editor.value; // full submitted code — always last
+    payload.worked_example_expected = truncate(fmtVal(expectedDisplay()), 300);
+    payload.failure_reasons = buildFailureReasons(res);
+
+    function sendPayload(){
+      payload.code = editor.value; // full submitted code — always last
+      fetchWithTimeout(WEB3FORMS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify(payload)
+      }, 15000).then(function(r){
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json().catch(function(){ return {}; });
+      }).then(function(data){
+        if (data && data.success === false) throw new Error("Web3Forms reported failure");
+        setStatus("Results sent to " + RECRUITER_EMAIL + " ✓", "sent");
+      }).catch(function(){
+        setStatus("Automatic sending failed — please use Copy results or Email results below.", "failed");
+      });
+    }
+
+    /* Stack ranking: record this result with the ranking service
+       first, so the rank can ride along in the result email.
+       Ranking must never block the email — an empty endpoint, a
+       timeout, or any error falls through to the send with an
+       explanatory stack_rank. The request uses a text/plain
+       content type so Apps Script needs no CORS preflight. */
+    var rankCell = el("stackRankCell");
+    function setRankCell(text){ if (rankCell) rankCell.textContent = text; }
     setStatus("Sending results to your recruiter…", "pending");
-    fetchWithTimeout(WEB3FORMS_ENDPOINT, {
+    if (!RANKING_ENDPOINT){
+      payload.stack_rank = "Not recorded (ranking service unavailable)";
+      setRankCell("—");
+      sendPayload();
+      return;
+    }
+    var rankRequest = {
+      token: RANKING_TOKEN,
+      name: state.name,
+      email: state.email || "",
+      language: PROBLEMS[state.lang].label,
+      tier: TIERS[state.tier].label,
+      problem: state.problem.title,
+      worked: !!(res && res.workedPass),
+      hiddenPassed: (res && typeof res.hiddenPassed === "number") ? res.hiddenPassed : 0,
+      timeUsedSec: elapsed,
+      departures: state.departures.length,
+      pasteAttempts: state.pasteAttempts
+    };
+    fetchWithTimeout(RANKING_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(payload)
-    }, 15000).then(function(r){
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(rankRequest)
+    }, 8000).then(function(r){
       if (!r.ok) throw new Error("HTTP " + r.status);
-      return r.json().catch(function(){ return {}; });
+      return r.json();
     }).then(function(data){
-      if (data && data.success === false) throw new Error("Web3Forms reported failure");
-      setStatus("Results sent to " + RECRUITER_EMAIL + " ✓", "sent");
+      if (!data || typeof data.rank !== "number" || typeof data.cohort !== "number") throw new Error("Unexpected ranking response");
+      var scope = TIERS[state.tier].label + " — " + state.problem.title;
+      if (data.cohort <= 1){
+        payload.stack_rank = "First recorded result on " + scope;
+      } else {
+        payload.stack_rank = "Rank " + data.rank + " of " + data.cohort + " on " + scope;
+        if (typeof data.topPct === "number") payload.percentile = "Top " + data.topPct + "% of " + data.cohort + " candidates";
+      }
+      setRankCell(payload.stack_rank + (payload.percentile ? " — " + payload.percentile : ""));
+      sendPayload();
     }).catch(function(){
-      setStatus("Automatic sending failed — please use Copy results or Email results below.", "failed");
+      payload.stack_rank = "Not recorded (ranking service unavailable)";
+      setRankCell("—");
+      sendPayload();
     });
   }
 
@@ -1856,6 +2005,15 @@
     } else {
       lines.push("Worked example: Not run");
       lines.push("Hidden checks passed: 0/3");
+    }
+    var allPassed = !!(res && !res.runtimeUnavailable && !res.notRun && res.workedPass && res.hiddenPassed === 3);
+    if (allPassed){
+      lines.push("Result detail: all checks passed.");
+    } else if (res && res.runtimeUnavailable){
+      lines.push("Result detail: checks were not executed — the execution service was unavailable; submitted for manual review.");
+    } else {
+      lines.push("Why it failed:");
+      buildFailureReasons(res).split("\n").forEach(function(l){ lines.push(l); });
     }
     lines.push("");
     lines.push("Submitted code:");
@@ -1894,9 +2052,37 @@
         rows += row("Hidden checks passed", '<span class="badge warn">Not run</span>');
       } else if (res){
         rows += row("Worked example", res.workedPass ? '<span class="badge pass">PASS</span>' : '<span class="badge fail">FAIL</span>' + (res.error ? '<div class="small" style="margin-top:6px">Error: ' + esc(res.error) + "</div>" : ""));
+        if (!res.workedPass){
+          rows += row("Expected (worked example)", '<div style="white-space:pre-wrap">' + esc(truncate(fmtVal(expectedDisplay()), 300)) + "</div>");
+          if (typeof res.workedActual !== "string"){
+            var wDetail = (res.details && res.details[0]) ? res.details[0].actual : res.workedActual;
+            if (wDetail !== null && wDetail !== undefined) rows += row("Your output (worked example)", '<div style="white-space:pre-wrap">' + esc(truncate(fmtVal(wDetail), 300)) + "</div>");
+          }
+        }
         if (typeof res.workedActual === "string") rows += row("Worked-example output", esc(res.workedActual));
         rows += row("Hidden checks passed", "<strong>" + res.hiddenPassed + " / 3</strong>");
+        if (res.details && typeof res.hiddenPassed === "number" && res.hiddenPassed < 3){
+          var failLines = [];
+          res.details.slice(1).forEach(function(d){
+            if (d.status === "pass") return;
+            var s = d.label + ": ";
+            if (d.status === "error"){
+              s += "ERROR — " + truncate(d.error || "unknown error", 300);
+            } else if (d.status === "not run"){
+              s += "NOT RUN";
+            } else {
+              var e2 = fmtVal(d.expected), a2 = fmtVal(d.actual);
+              s += "FAILED";
+              if (e2 !== null) s += " — expected " + truncate(e2, 300);
+              if (a2 !== null) s += "; produced " + truncate(a2, 300);
+              if (e2 === null && a2 === null) s += " (per-check outputs are not reported for this language)";
+            }
+            failLines.push(s);
+          });
+          if (failLines.length) rows += row("Hidden check failures", failLines.map(function(l){ return '<div style="white-space:pre-wrap">' + esc(l) + "</div>"; }).join(""));
+        }
       }
+      rows += row("Stack rank", '<span id="stackRankCell">Recording…</span>');
       el("summaryBody").innerHTML = rows;
       el("submittedCode").textContent = editor.value;
       plainTextCache = buildPlainText(res, elapsed, state.expired);
